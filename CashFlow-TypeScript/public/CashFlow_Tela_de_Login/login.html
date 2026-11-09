@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#183350">
+    <title>Cash Flow - Login</title>
+    <link rel="stylesheet" href="loginStyle.css">
+<link rel="stylesheet" href="/accessibility.css">
+<link rel="stylesheet" href="/auth.css">
+<link rel="stylesheet" href="/mobile.css">
+<script src="/mobile.js"></script>
+<script src="/auth-ui.js"></script>
+<script src="/requirements.js" defer></script>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <div class="info-side">
+        <div class="logo">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHJ4PSIxMyIgZmlsbD0iIzFlM2E1ZiIvPjxsaW5lIHgxPSIxNiIgeTE9IjIyIiB4Mj0iNDAiIHkyPSIyMiIgc3Ryb2tlPSIjMjJjNTVlIiBzdHJva2Utd2lkdGg9IjIuOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBvbHlnb24gcG9pbnRzPSI0NCwyMiAzNiwxNyAzNiwyNyIgZmlsbD0iIzIyYzU1ZSIvPjxsaW5lIHgxPSI0NCIgeTE9IjM4IiB4Mj0iMjAiIHkyPSIzOCIgc3Ryb2tlPSIjZjg3MTcxIiBzdHJva2Utd2lkdGg9IjIuOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBvbHlnb24gcG9pbnRzPSIxNiwzOCAyNCwzMyAyNCw0MyIgZmlsbD0iI2Y4NzE3MSIvPjwvc3ZnPg==" width="60" height="60" alt="CashFlow" />
+            <div class="logo-text">Cash Flow</div>
+        </div>
+        
+        <div class="hero-content">
+            <h1>Transforme suas finanças</h1>
+            <p>Gerencie seu dinheiro de forma inteligente e tome decisões financeiras mais assertivas com nossa plataforma completa.</p>
+            
+            <ul class="features">
+                <li>Controle total de receitas e despesas</li>
+                <li>Relatórios inteligentes e insights</li>
+                <li>Metas financeiras personalizadas</li>
+                <li>Segurança bancária de dados</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="login-side">
+        <div class="login-card">
+            <div class="login-header">
+                <h2>Bem-vindo de volta</h2>
+                <p>Entre na sua conta para continuar</p>
+            </div>
+            
+            <div class="message error-message" id="errorMessage"></div>
+            <div class="message success-message" id="successMessage"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input 
+                            type="email" 
+                            id="email" autocomplete="email" 
+                            class="input-field" 
+                            placeholder=" "
+                            required
+                        >
+                        <!-- <div class="input-icon"><img src="icone email.png" alt=""></div> -->
+                        <label for="email" class="floating-label">E-mail</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" autocomplete="current-password" 
+                            class="input-field" 
+                            placeholder=" "
+                            required
+                        >
+                        <!-- <div class="input-icon"><img src="icone senha.png" alt=""></div> -->
+                        <label for="password" class="floating-label">Senha</label>
+                        <button type="button" class="password-toggle" aria-label="Mostrar senha"></button>
+                    </div>
+                </div>
+                
+                <div class="remember-forgot">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="remember">
+                        <div class="custom-checkbox"></div>
+                        <span class="checkbox-label">Lembrar de mim</span>
+                    </label>
+                    <a href="/recuperar-senha.html" class="forgot-link">Esqueceu a senha?</a>
+                </div>
+                
+                <button type="submit" class="login-btn" id="loginBtn">
+                    Entrar na conta
+                </button>
+            </form>
+            
+            <div class="divider">
+                <span>ou</span>
+            </div>
+
+            <div class="google-slot" id="googleLogin"></div>
+
+            <div class="google-consent" id="googleConsent" hidden>
+                <p><strong>Ainda não existe uma conta com esse Google.</strong> Para criar sua conta agora, aceite os termos:</p>
+                <label class="google-consent-check"><input type="checkbox" id="googleTermos"> <span>Li e concordo com os <a href="/privacidade.html">Termos de Uso e a Política de Privacidade (LGPD)</a> do Cash Flow.</span></label>
+                <p class="field-error" id="googleTermosErro" hidden>Marque a caixa acima para criar sua conta com o Google.</p>
+                <button type="button" class="login-btn" id="googleCriar">Criar conta com Google</button>
+            </div>
+            
+            <div class="signup-link">
+                Não tem uma conta?
+                <a href="../CashFlow_Tela_de_Cadastro/dadospessoais.html">Criar conta gratuita</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="loginjs.js"></script>
+</body>
+</html>

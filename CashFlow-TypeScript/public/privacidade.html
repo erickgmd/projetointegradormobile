@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#183350">
+<title>Privacidade e uso dos dados — CashFlow</title>
+<link rel="stylesheet" href="/accessibility.css">
+<link rel="stylesheet" href="/auth.css">
+<script src="/mobile.js"></script>
+</head>
+<body class="auth-page">
+<div class="auth-shell">
+<div class="auth-brand"><span class="auth-logo" aria-hidden="true">⇄</span><span>Cash Flow</span></div>
+<main class="auth-card auth-card-wide">
+<h1>Privacidade e uso dos dados</h1>
+<p>O CashFlow utiliza os dados fornecidos no cadastro, perfil e transações para autenticar sua conta, organizar suas finanças, gerar relatórios e apresentar alertas conforme o limite escolhido.</p>
+<p>Se você entrar ou se cadastrar com o Google, recebemos do Google apenas seu nome, seu email verificado e um identificador da conta Google, usados para criar a conta e permitir o acesso. Não recebemos sua senha do Google.</p>
+<p>A vinculação opcional ao Telegram utiliza seu identificador para associar a conta. Mensagens de transações enviadas ao bot são processadas para registrar descrição, valor, categoria e data. Imagens de comprovantes podem passar por reconhecimento de texto (OCR) no servidor. As imagens processadas são descartadas da memória do servidor após o processamento; mensagens e arquivos originais no Telegram seguem as regras e controles do próprio Telegram. Não envie comprovantes com dados desnecessários. O envio de recuperação de senha utiliza um serviço de e-mail SMTP, que recebe o endereço de destino e a mensagem com um link temporário. A consulta de taxas do Banco Central e o recurso VLibras podem conectar seu navegador aos respectivos serviços externos.</p>
+<p>As preferências de apresentação ficam associadas ao perfil. Sua sessão é encerrada após 30 minutos de inatividade. Se você marcar "Lembrar de mim", a sessão fica ativa neste dispositivo por até 30 dias ou até você sair da conta. Não use essa opção em aparelhos compartilhados e não compartilhe sua senha ou códigos de recuperação e vinculação.</p>
+<p>Você pode consultar e corrigir informações no Perfil, exportar seu relatório na página inicial e solicitar a exclusão permanente da conta e dos dados associados no Perfil. O registro do consentimento informa quando você aceitou este tratamento.</p>
+<p>Os dados opcionais de cadastro podem ser omitidos. Os dados de conta e transações permanecem enquanto a conta estiver ativa; a exclusão remove os registros associados no serviço. O responsável pelo serviço e seu canal de contato para solicitações de privacidade devem ser definidos antes da publicação pública.</p>
+<p>Use apenas dados necessários ao controle financeiro. Para interromper o tratamento, utilize a exclusão da conta no Perfil.</p>
+<p data-only-page class="auth-links"><a id="voltar" href="/CashFlow_Tela_de_Login/login.html">← Voltar</a></p>
+</main>
+</div>
+<script>
+// Volta para a tela anterior (ex.: cadastro) mantendo o que já foi preenchido.
+document.getElementById("voltar").addEventListener("click", function (e) {
+  var mesmaOrigem = document.referrer && document.referrer.indexOf(location.origin) === 0;
+  if (mesmaOrigem && history.length > 1) { e.preventDefault(); history.back(); }
+});
+</script>
+</body>
+</html>

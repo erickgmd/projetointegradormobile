@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#183350">
+    <title>Cadastre-se no Cash Flow</title>
+    <link rel="stylesheet" href="endereco.css">
+<link rel="stylesheet" href="/accessibility.css">
+<link rel="stylesheet" href="/auth.css">
+<link rel="stylesheet" href="/mobile.css">
+<script src="/mobile.js"></script>
+<script src="/requirements.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Cadastre-se no Cash Flow</h1>
+            <p>Sua jornada financeira começa aqui. Preencha os dados abaixo para criar sua conta.</p>
+        </div>
+
+        <div class="progress-bar">
+            <div class="step completed">
+                <div class="step-number">✓</div>
+                <div class="step-label">Dados Pessoais</div>
+            </div>
+            <div class="step-connector active"></div>
+            <div class="step active">
+                <div class="step-number">2</div>
+                <div class="step-label">Endereço</div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-label">Finalização</div>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <div class="section-title">Endereço residencial</div>
+            
+            <div class="form-alert" id="enderecoAlerta" role="alert"></div><p>Endereço opcional. Você pode continuar sem preencher estes dados.</p><form id="cadastroEtapa2">
+                <div class="form-row">
+                    <div class="form-group cep-group">
+                        <label for="cep">CEP (opcional)</label>
+                        <div class="cep-input-container">
+                            <input type="text" id="cep" name="cep" placeholder="00000-000" maxlength="9" inputmode="numeric" autocomplete="postal-code" aria-describedby="cepStatus">
+                        </div>
+                        <p class="cep-status" id="cepStatus" role="status" aria-live="polite">Digite o CEP: o endereço é preenchido automaticamente.</p>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="logradouro">Logradouro (opcional)</label>
+                        <input type="text" id="logradouro" name="logradouro" placeholder="Nome da Rua, Avenida, etc">
+                    </div>
+                    <div class="form-group">
+                        <label for="complemento">Complemento (opcional)</label>
+                        <input type="text" id="complemento" name="complemento" placeholder="Apto 101, Bloco A, etc.">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bairro">Bairro (opcional)</label>
+                        <input type="text" id="bairro" name="bairro" placeholder="Nome do Bairro">
+                    </div>
+                    <div class="form-group">
+                        <label for="cidade">Cidade (opcional)</label>
+                        <input type="text" id="cidade" name="cidade" placeholder="Nome da Cidade">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="estado">Estado (opcional)</label>
+                        <select id="estado" name="estado">
+                            <option value="">Selecione</option>
+                            <option value="AC">Acre</option>
+                            <option value="AL">Alagoas</option>
+                            <option value="AP">Amapá</option>
+                            <option value="AM">Amazonas</option>
+                            <option value="BA">Bahia</option>
+                            <option value="CE">Ceará</option>
+                            <option value="DF">Distrito Federal</option>
+                            <option value="ES">Espírito Santo</option>
+                            <option value="GO">Goiás</option>
+                            <option value="MA">Maranhão</option>
+                            <option value="MT">Mato Grosso</option>
+                            <option value="MS">Mato Grosso do Sul</option>
+                            <option value="MG">Minas Gerais</option>
+                            <option value="PA">Pará</option>
+                            <option value="PB">Paraíba</option>
+                            <option value="PR">Paraná</option>
+                            <option value="PE">Pernambuco</option>
+                            <option value="PI">Piauí</option>
+                            <option value="RJ">Rio de Janeiro</option>
+                            <option value="RN">Rio Grande do Norte</option>
+                            <option value="RS">Rio Grande do Sul</option>
+                            <option value="RO">Rondônia</option>
+                            <option value="RR">Roraima</option>
+                            <option value="SC">Santa Catarina</option>
+                            <option value="SP">São Paulo</option>
+                            <option value="SE">Sergipe</option>
+                            <option value="TO">Tocantins</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tipo-residencia">Tipo de Residência (opcional)</label>
+                        <select id="tipo-residencia" name="tipo_residencia">
+                            <option value="">Selecione</option>
+                            <option value="casa">Casa</option>
+                            <option value="apartamento">Apartamento</option>
+                            <option value="kitnet">Kitnet</option>
+                            <option value="studio">Studio</option>
+                            <option value="sobrado">Sobrado</option>
+                            <option value="cobertura">Cobertura</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tempo-residencia">Tempo de Residência (opcional)</label>
+                    <select id="tempo-residencia" name="tempo_residencia">
+                        <option value="">Selecione</option>
+                        <option value="menos-6-meses">Menos de 6 meses</option>
+                        <option value="6-meses-1-ano">6 meses a 1 ano</option>
+                        <option value="1-2-anos">1 a 2 anos</option>
+                        <option value="2-5-anos">2 a 5 anos</option>
+                        <option value="5-10-anos">5 a 10 anos</option>
+                        <option value="mais-10-anos">Mais de 10 anos</option>
+                    </select>
+                </div>
+
+                <div class="login-link">
+                    <span>Já possui uma conta? <a href="/CashFlow_Tela_de_Login/login.html">Faça login</a></span>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="button" class="btn-secondary">Passo Anterior</button>
+                    <button type="button" id="skipAddress" class="btn-secondary">Pular endereço</button><button type="submit" class="btn-primary">Próximo Passo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="enderecojs.js"></script>
+</body>
+</html>

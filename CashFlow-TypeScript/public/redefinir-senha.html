@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#183350">
+<title>Redefinir senha — CashFlow</title>
+<link rel="stylesheet" href="/accessibility.css">
+<link rel="stylesheet" href="/auth.css">
+<script src="/mobile.js"></script>
+<script src="/auth-ui.js"></script>
+</head>
+<body class="auth-page">
+<div class="auth-shell">
+  <div class="auth-brand"><span class="auth-logo" aria-hidden="true">⇄</span><span>Cash Flow</span></div>
+  <main class="auth-card">
+    <section id="formulario">
+      <div class="auth-icon" aria-hidden="true">🔒</div>
+      <h1>Criar nova senha</h1>
+      <p class="auth-lead">Escolha uma senha forte que você não use em outros sites.</p>
+      <div class="form-alert" id="status" role="status" aria-live="polite"></div>
+      <form class="auth-form" novalidate>
+        <label for="senha">Nova senha</label>
+        <input id="senha" name="senha" type="password" autocomplete="new-password" required>
+        <label for="confirmar_senha">Confirme a nova senha</label>
+        <input id="confirmar_senha" name="confirmar_senha" type="password" autocomplete="new-password" required>
+        <p class="field-error" id="confirmarErro" hidden></p>
+        <button class="auth-submit" type="submit">Salvar nova senha</button>
+      </form>
+    </section>
+    <section id="concluido" class="auth-done" hidden>
+      <div class="auth-icon" aria-hidden="true">✅</div>
+      <h1>Senha alterada</h1>
+      <p class="auth-lead">Sua senha foi atualizada e as sessões abertas foram encerradas. Entre de novo com a nova senha.</p>
+      <a class="auth-submit" style="display:grid;place-items:center;text-decoration:none" href="/CashFlow_Tela_de_Login/login.html">Ir para o login</a>
+    </section>
+    <p class="auth-links" id="voltar"><a href="/CashFlow_Tela_de_Login/login.html">← Voltar ao login</a></p>
+  </main>
+</div>
+<script>
+(function () {
+  var token = new URLSearchParams(location.search).get("token");
+  history.replaceState(null, "", location.pathname);
+  var form = document.querySelector("form");
+  var senha = document.getElementById("senha");
+  var confirmar = document.getElementById("confirmar_senha");
+  var erro = document.getElementById("confirmarErro");
+  var status = document.getElementById("status");
+  CashFlowAuth.attachPasswordToggle(senha);
+  CashFlowAuth.attachPasswordToggle(confirmar);
+  CashFlowAuth.attachStrengthMeter(senha);
+  function alerta(tipo, texto) { status.className = "form-alert show " + tipo; status.innerHTML = texto; }
+  if (!token) alerta("error", 'Este link está incompleto. <a href="/recuperar-senha.html">Peça um novo link</a>.');
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    erro.hidden = true; confirmar.classList.remove("input-invalid"); senha.classList.remove("input-invalid");
+    if (!CashFlowAuth.checkPassword(senha.value).ok) {
+      senha.classList.add("input-invalid"); senha.focus();
+      alerta("error", "A senha ainda está fraca. Siga os itens abaixo do campo."); return;
+    }
+    if (senha.value !== confirmar.value) {
+      erro.textContent = "As senhas não coincidem."; erro.hidden = false;
+      confirmar.classList.add("input-invalid"); confirmar.focus(); return;
+    }
+    var botao = form.querySelector("button"); botao.disabled = true;
+    try {
+      var r = await fetch("/api/senha/redefinir", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: token, senha: senha.value, confirmar_senha: confirmar.value }) });
+      var d = await r.json().catch(function () { return {}; });
+      if (!r.ok) {
+        var texto = (d.message || "Não foi possível alterar a senha.").replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; });
+        alerta("error", texto + (r.status === 400 && /link/i.test(texto) ? ' <a href="/recuperar-senha.html">Pedir novo link</a>' : ""));
+        return;
+      }
+      document.getElementById("formulario").hidden = true;
+      document.getElementById("voltar").hidden = true;
+      document.getElementById("concluido").hidden = false;
+    } catch (err) {
+      alerta("error", "Sem conexão com o servidor. Tente novamente.");
+    } finally { botao.disabled = false; }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+CashFlow3.0.0
+Adequação ao documento Requisitos Funcionais recebido em04/11/2026
+Fonte: docs/requisitos/FONTE.md
+Rastreabilidade: docs/requisitos/MATRIZ.md
+Instalação e atualização: README.md
+Validação: docs/VALIDACAO.md

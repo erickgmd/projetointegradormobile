@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil do Usuário</title>
+    <link rel="stylesheet" href="perfil.css">
+    <script src="/session.js" defer></script>
+<link rel="stylesheet" href="/accessibility.css">
+<link rel="stylesheet" href="/mobile.css">
+<script src="/mobile.js"></script>
+<script src="/requirements.js" defer></script>
+</head>
+<body>
+<header class="profile-header">
+    <a href="../CashFlow_Tela_HomePage/home.html" class="profile-brand">
+    <div class="profile-logo">CF</div>
+    <div>
+        <h2>CashFlow</h2>
+        <p>Perfil e preferências financeiras</p>
+    </div>
+</a>
+<div class="user-menu">
+        <div class="user-icon" id="userIcon">
+            👤
+        </div>
+
+        <div class="user-dropdown" id="userDropdown">
+            <a class="user-name" id="userName">Usuário</a>
+            <hr>
+            <a href="../CashFlow_Tela_HomePage/home.html" id="editProfileBtn">🏠 Home</a>
+            <a href="../CashFlow_Tela_Config/config.html" id="settingsBtn">⚙️ Configurações</a>
+            <a href="#" id="btnTelegram"><img src="../image.png" class="imgTelegram" alt="">Código</a>
+
+
+
+            <a href="../CashFlow_Tela_de_Login/login.html" id="logoutBtn" class="logout">🚪 Logout</a>
+        </div>
+    </div>
+</header>
+
+<!-- Conteúdo da página -->
+<div class="container">
+    <h1>Perfil do Usuário</h1>
+    <p class="subtitle">Atualize suas informações pessoais e financeiras</p>
+
+    <section class="profile-hero-card">
+        <div>
+            <span>Configuração do usuário</span>
+            <h2>Gerencie seus dados com clareza</h2>
+            <p>Atualize suas informações pessoais, endereço, preferências financeiras e defina seu gasto máximo mensal para receber alertas no CashFlow.</p>
+        </div>
+        <div class="profile-hero-icon">👤</div>
+    </section>
+
+    <form class="profile-form">
+        <fieldset>
+            <legend>Informações Pessoais</legend>
+            <label>Nome completo:
+                <input type="text" name="nome" required>
+            </label>
+            <label>CPF (opcional):
+                <input type="text" name="cpf">
+            </label>
+            <label>Data de nascimento (opcional):
+                <input type="date" name="nascimento">
+            </label>
+            <label>Telefone celular (opcional):
+                <input type="tel" name="telefone">
+            </label>
+            <label>Email:
+                <input type="email" name="email" required>
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Endereço</legend>
+            <label>CEP (opcional):
+                <input type="text" name="cep">
+            </label>
+            <label>Logradouro (opcional):
+                <input type="text" name="logradouro">
+            </label>
+            <label>Complemento (opcional):
+                <input type="text" name="complemento">
+            </label>
+            <label>Bairro (opcional):
+                <input type="text" name="bairro">
+            </label>
+            <label>Cidade (opcional):
+                <input type="text" name="cidade">
+            </label>
+            <label>Estado (opcional):
+                <select name="estado">
+                    <option value="">Selecione</option>
+                    <option value="DF">DF</option>
+                    <option value="SP">SP</option>
+                    <option value="RJ">RJ</option>
+                    <option value="MG">MG</option>
+                    <!-- Adicione outros estados -->
+                </select>
+            </label>
+            <label>Tipo de residência (opcional):
+                <select name="tipo_residencia">
+                    <option value="">Selecione</option>
+                    <option value="casa">Casa</option>
+                    <option value="apartamento">Apartamento</option>
+                    <option value="kitnet">Kitnet</option>
+                    <option value="studio">Studio</option>
+                    <option value="sobrado">Sobrado</option>
+                    <option value="cobertura">Cobertura</option>
+                </select>
+            </label>
+            <label>Tempo de residência (opcional):
+                <input type="text" name="tempo_residencia">
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Informações Financeiras</legend>
+            <label>Renda mensal (opcional):
+                <input type="text" id="renda" name="renda" placeholder="Ex.: R$ 3.500,00">
+            </label>
+            <label>Média de despesas mensal (opcional):
+                <input type="text" id="despesas" name="despesas" placeholder="Ex.: R$ 2.100,00">
+            </label>
+
+            <label class="limit-field" id="gasto-maximo">Gasto máximo mensal:
+                <input type="text" id="gastoMaximo" name="gasto_maximo" placeholder="Ex.: R$ 2.500,00" inputmode="decimal">
+                <small class="gasto-maximo-help">Você receberá notificações na Home quando ultrapassar esse limite mensal.</small>
+            </label>
+
+            <label>Tipo de investimento (opcional):
+                <select name="tipo_investimento">
+                    <option value="">Selecione</option>
+                    <option value="conservador">Conservador</option>
+                    <option value="moderado">Moderado</option>
+                    <option value="arrojado">Arrojado</option>
+                    <option value="agressivo">Agressivo</option>
+                </select>
+            </label>
+            <label>Faixa de investimento (opcional):
+                <select name="faixa_investimento">
+                    <option value="">Selecione</option>
+                    <option value="ate-1000">Até R$ 1.000</option>
+                    <option value="1000-5000">R$ 1.000 - R$ 5.000</option>
+                    <option value="5000-10000">R$ 5.000 - R$ 10.000</option>
+                    <option value="10000-50000">R$ 10.000 - R$ 50.000</option>
+                    <option value="acima-50000">Acima de R$ 50.000</option>
+                </select>
+            </label>
+        </fieldset>
+
+        <button type="submit">Salvar Informações</button>
+    </form>
+</div>
+<script src="perfil.js"></script>
+<!-- MODAL TELEGRAM -->
+<div id="modalCodigo" class="modal" aria-labelledby="tgTitle">
+  <div class="modal-content tg-modal">
+    <button type="button" class="fechar" aria-label="Fechar">&times;</button>
+    <div class="tg-icon" aria-hidden="true"><img src="../image.png" alt=""></div>
+    <h2 class="h2Code" id="tgTitle">Vincular Telegram</h2>
+    <p class="textCode">Registre gastos e receba alertas pelo bot do CashFlow.</p>
+    <span id="tgBadge" class="tg-badge">Verificando...</span>
+
+    <div class="tg-field">
+      <label for="inputTelegram">Seu nome de usuário no Telegram</label>
+      <div class="tg-input"><span aria-hidden="true">@</span><input type="text" id="inputTelegram" placeholder="seuusuario" class="inputTelegram" maxlength="33" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <small class="tg-hint">Você encontra em Telegram &gt; Configurações &gt; Nome de usuário. Use de 5 a 32 caracteres: letras, números ou sublinhado ( _ ).</small>
+    </div>
+
+    <button id="gerarCodigoBtn" type="button">Gerar código</button>
+
+    <div id="codigoBox" class="tg-code" hidden>
+      <p>Envie esta mensagem ao bot, no chat privado, em até <strong>10 minutos</strong>:</p>
+      <code id="codigoGerado"></code>
+      <button type="button" id="copiarCodigo">Copiar mensagem</button>
+      <small id="codigoValidade"></small>
+    </div>
+
+    <small id="statusMsg" class="tg-status" role="status"></small>
+  </div>
+</div>
+</body>
+
+</html>
