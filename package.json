@@ -1,0 +1,55 @@
+{
+  "name": "cashflow",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "firebase:configure": "node scripts/configure-firebase.mjs",
+    "dev": "node --import tsx --watch src/server.ts",
+    "build": "tsc && node scripts/vendor.mjs",
+    "start": "node dist/server.js",
+    "db:migrate": "node --import tsx src/migrate.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "check": "tsc --noEmit",
+    "telegram:webhook": "node --import tsx scripts/telegram-webhook.ts",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "ocr:prepare": "node scripts/ocr-prepare.mjs",
+    "email:teste": "node --import tsx scripts/email-teste.ts"
+  },
+  "dependencies": {
+    "@fastify/compress": "^9.3.0",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/formbody": "^8.0.2",
+    "@fastify/helmet": "^13.2.0",
+    "@fastify/multipart": "^9.2.1",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/static": "^10.1.10",
+    "bcryptjs": "^3.0.2",
+    "chart.js": "^4.6.1",
+    "dotenv": "^17.2.3",
+    "fastify": "^5.6.0",
+    "firebase": "^13.2.0",
+    "firebase-admin": "^14.5.0",
+    "google-auth-library": "^10.9.1",
+    "jspdf": "^4.2.1",
+    "nodemailer": "^10.3.1",
+    "pg": "^8.16.3",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.14",
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^24.0.0",
+    "@types/nodemailer": "^8.0.2",
+    "@types/pg": "^8.15.5",
+    "axe-core": "^4.14.0",
+    "esbuild": "^0.28.2",
+    "jsdom": "^30.1.3",
+    "prettier": "^3.9.10",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

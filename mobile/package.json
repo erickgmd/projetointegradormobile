@@ -1,0 +1,23 @@
+{
+  "name": "cashflow-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aplicativo Android do CashFlow (Capacitor) que abre o servidor CashFlow",
+  "scripts": {
+    "sync": "cap sync android",
+    "open": "cap open android",
+    "reverse": "adb reverse tcp:3001 tcp:3001",
+    "android": "cap sync android && cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.0.0",
+    "@capacitor/share": "^8.0.0",
+    "@capgo/capacitor-social-login": "^8.7.7"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
+    "typescript": "^5.9.3"
+  }
+}

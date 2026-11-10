@@ -1,0 +1,132 @@
+.profile-limit-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 22px;
+    padding: 24px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.10);
+    margin-top: 24px;
+}
+
+.profile-limit-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.profile-limit-header span {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #2563eb;
+    margin-bottom: 6px;
+}
+
+.profile-limit-header h2 {
+    color: #0f172a;
+    font-size: 1.35rem;
+    margin-bottom: 6px;
+}
+
+.profile-limit-header p {
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.profile-limit-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eff6ff;
+    font-size: 1.6rem;
+}
+
+.profile-limit-form label {
+    display: block;
+    color: #334155;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.profile-limit-input-row {
+    display: flex;
+    align-items: center;
+    border: 1.8px solid #dbe3ee;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #ffffff;
+    margin-bottom: 14px;
+}
+
+.profile-limit-input-row span {
+    padding: 0 14px;
+    font-weight: 900;
+    color: #2563eb;
+}
+
+.profile-limit-input-row input {
+    flex: 1;
+    border: none;
+    padding: 14px;
+    font-size: 1rem;
+    outline: none;
+}
+
+.profile-limit-form button {
+    border: none;
+    border-radius: 14px;
+    padding: 13px 18px;
+    font-weight: 900;
+    color: #ffffff;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    cursor: pointer;
+}
+
+.profile-limit-message {
+    margin-top: 12px;
+    font-weight: 800;
+}
+
+.profile-limit-message.success {
+    color: #16a34a;
+}
+
+.profile-limit-message.error {
+    color: #dc2626;
+}
+
+body.theme-dark .profile-limit-card,
+body.dark-theme .profile-limit-card {
+    background: #111827;
+    border-color: rgba(148, 163, 184, 0.28);
+}
+
+body.theme-dark .profile-limit-header h2,
+body.dark-theme .profile-limit-header h2,
+body.theme-dark .profile-limit-form label,
+body.dark-theme .profile-limit-form label {
+    color: #f8fafc;
+}
+
+body.theme-dark .profile-limit-header p,
+body.dark-theme .profile-limit-header p {
+    color: #cbd5e1;
+}
+
+body.theme-dark .profile-limit-input-row,
+body.dark-theme .profile-limit-input-row {
+    background: #020617;
+    border-color: rgba(148, 163, 184, 0.34);
+}
+
+body.theme-dark .profile-limit-input-row input,
+body.dark-theme .profile-limit-input-row input {
+    background: #020617;
+    color: #f8fafc;
+}

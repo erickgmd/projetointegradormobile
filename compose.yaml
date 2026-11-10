@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: cashflow
+      POSTGRES_USER: cashflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cashflow_local}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - cashflow_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cashflow -d cashflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://cashflow:${POSTGRES_PASSWORD:-cashflow_local}@db:5432/cashflow
+      PORT: 3001
+      HOST: 0.0.0.0
+      NODE_ENV: development
+    ports:
+      - "127.0.0.1:3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  cashflow_data:

@@ -1,0 +1,4 @@
+{$CASHFLOW_DOMAIN} {
+ encode zstd gzip
+ reverse_proxy app:3001
+}
