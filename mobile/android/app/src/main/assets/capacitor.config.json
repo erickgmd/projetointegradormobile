@@ -1,0 +1,13 @@
+{
+	"appId": "br.com.cashflow.app",
+	"appName": "CashFlow",
+	"webDir": "www",
+	"server": {
+		"url": "https://projetointegradormobile.onrender.com",
+		"cleartext": false,
+		"errorPath": "erro.html"
+	},
+	"android": {
+		"allowMixedContent": false
+	}
+}
