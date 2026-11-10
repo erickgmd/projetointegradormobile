@@ -524,6 +524,11 @@ export async function buildApp(
     return success({ message: "Todas as transações foram removidas." });
   });
   await requirementsRoutes(app, db, options);
+  // Abrir o site/app vai direto para a tela de login (sem a página intermediária).
+  const goToLogin = (_req: FastifyRequest, reply: FastifyReply) =>
+    reply.redirect("/CashFlow_Tela_de_Login/login.html");
+  app.get("/", goToLogin);
+  app.get("/index.html", goToLogin);
   await app.register(staticFiles, {
     root: fileURLToPath(new URL("../public", import.meta.url)),
     dotfiles: "deny",
