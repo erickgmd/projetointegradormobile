@@ -140,5 +140,9 @@ npm run build
 Os testes SQL usam PGlite, a API usa Fastify inject e a UI usa JSDOM/axe. Não houve acesso ao seu Supabase, envio de email/mensagem real, OCR real, execução Docker nem inspeção em navegadores reais. Auditoria automática de acessibilidade não incluiu contraste de cores e não certifica WCAG2.1AA. Veja `docs/VALIDACAO.md` e `docs/requisitos/ACEITE.md`.
 # Login Google com Firebase
 
+<<<<<<< HEAD
 Esta versão usa Firebase Authentication com popup SDK no site e troca REST no backend para Android. Siga [INTEGRACAO_FIREBASE.md](INTEGRACAO_FIREBASE.md) antes de publicar. As configurações públicas estão em config/firebase-web.json (site) e config/firebase.json (Android); preserve o pacote com.Cashflow. As instruções antigas de GOOGLE_CLIENT_ID abaixo foram substituídas por essa configuração. Ative Google e autorize o domínio no Firebase.
+=======
+Esta versão usa Firebase Authentication no backend para o login Google web/Android. Siga [INTEGRACAO_FIREBASE.md](INTEGRACAO_FIREBASE.md) antes de publicar. A configuração pública já foi gerada a partir do google-services.json enviado; preserve o pacote com.Cashflow. As instruções antigas de GOOGLE_CLIENT_ID abaixo foram substituídas por config/firebase.json / FIREBASE_WEB_CLIENT_ID.
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
 

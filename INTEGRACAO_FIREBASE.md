@@ -2,6 +2,7 @@
 
 ## O que mudou
 
+<<<<<<< HEAD
 No site, o botão usa o SDK modular Firebase Authentication com signInWithPopup. Ele envia o ID token Firebase ao servidor, que o verifica com Firebase Admin SDK (assinatura, emissor, audiência e validade). Apenas contas com provedor google.com e email verificado são aceitas. O SDK web é empacotado localmente em public/vendor/firebase-auth.js durante npm run build, sem Analytics.
 
 No Android, o seletor nativo Capgo continua obtendo o token Google. O servidor verifica essa credencial e a autentica no Firebase via accounts:signInWithIdp. Não é aberto popup web no WebView. O google-services.json configura o projeto Android, e sua configuração pública foi extraída para config/firebase.json. O site usa config/firebase-web.json com os dados fornecidos pelo usuário. A verificação de assinatura por chave pública usa projectId explícito; não realiza operações administrativas de contas nem checagem remota de revogação. Não é preciso enviar chave privada/service account para esse fluxo.
@@ -16,6 +17,11 @@ A identidade Google original é mantida em usuarios.google_sub; contas e transa�
 4. O authDomain usado é cashflow-41beb.firebaseapp.com. Para clientes configurados manualmente, confira a URI de redirecionamento https://cashflow-41beb.firebaseapp.com/__/auth/handler no cliente OAuth Web.
 5. Publique package.json, package-lock.json, config, src, scripts e public no Render. Build: npm ci && npm run build. Start: npm start. Recarregue o site após o deploy.
 6. A alteração web não exige gerar outro AAB. O fluxo Android foi preservado e continua exigindo SHA-1 correto.
+=======
+O login Google agora passa obrigatoriamente pelo Firebase Authentication via API REST no backend. O botão web (Google Identity Services) e o seletor nativo Android (Capgo Social Login) continuam obtendo o token Google. O servidor verifica sua assinatura e audiência e o troca por uma autenticação Firebase em accounts:signInWithIdp. Só após confirmação do Firebase ele cria a sessão CashFlow.
+
+Esta implementação não usa o SDK Firebase no WebView nem mantém sessão Firebase no Android. O google-services.json configura o projeto Android, e seu cliente OAuth Web e a API key pública foram extraídos para config/firebase.json. Não há necessidade de chave privada/service account. A identidade Google original é mantida em usuarios.google_sub; contas e transações existentes permanecem no PostgreSQL/Supabase. Login por senha, recuperação de senha e sessões continuam no backend atual: não foram migrados para Firebase.
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
 
 ## 1 Configuração obrigatória no painel
 
@@ -30,7 +36,11 @@ O erro 28444 acontece antes da troca com Firebase: o seletor Google ainda exige 
 
 ## 2 Publicar o backend no Render
 
+<<<<<<< HEAD
 Atualize no seu repositório os arquivos deste pacote (incluindo package.json, package-lock.json, src, scripts, config/firebase.json, config/firebase-web.json, public/firebase-auth-entry.js e public/auth-ui.js). Não publique .env, JKS, pastas de build ou node_modules.
+=======
+Atualize no seu repositório os arquivos deste pacote (incluindo src, scripts, config/firebase.json e public/auth-ui.js). Não publique .env, JKS, pastas de build ou node_modules.
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
 
 Na raiz CashFlow-TypeScript, execute:
 

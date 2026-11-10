@@ -3,14 +3,20 @@ import { buildApp } from "./app.js";
 import { connectDatabase } from "./db.js";
 import { resetSender } from "./integrations/mail.js";
 import { firebaseGoogleVerifier, loadFirebaseConfig } from "./integrations/firebase.js";
+<<<<<<< HEAD
 import { firebaseTokenVerifier, loadFirebaseWebConfig } from "./integrations/firebase-web.js";
+=======
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
 import { TelegramService } from "./integrations/telegram.js";
 import { saveTransaction, monthlySummary } from "./services/finance.js";
 import { startWorkers } from "./services/worker.js";
 const db = connectDatabase();
 const firebase = loadFirebaseConfig();
+<<<<<<< HEAD
 const firebaseWeb = loadFirebaseWebConfig();
 if (firebaseWeb.projectId !== firebase.projectId) throw new Error("Os apps Firebase Web e Android precisam usar o mesmo projeto.");
+=======
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
 const app = await buildApp(db, {
   logger: true,
   production: process.env.NODE_ENV === "production",
@@ -21,8 +27,11 @@ const app = await buildApp(db, {
     .filter(Boolean),
   googleClientId: firebase.clientId,
   verifyGoogle: firebaseGoogleVerifier(firebase),
+<<<<<<< HEAD
   verifyFirebase: firebaseTokenVerifier(firebase.projectId),
   firebaseWebConfig: firebaseWeb,
+=======
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
   sendReset: resetSender(),
   telegramSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
 });

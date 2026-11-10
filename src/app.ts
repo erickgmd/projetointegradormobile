@@ -67,8 +67,11 @@ export async function buildApp(
     // Login com Google: Client ID Web público e verificador do ID token.
     googleClientId?: string;
     verifyGoogle?: GoogleVerifier;
+<<<<<<< HEAD
     verifyFirebase?: GoogleVerifier;
     firebaseWebConfig?: Record<string, string>;
+=======
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
   } = {},
 ) {
   const app = Fastify({
@@ -295,21 +298,35 @@ export async function buildApp(
     },
   );
   app.get("/api/config/publica", async () =>
+<<<<<<< HEAD
     success({ googleClientId: options.googleClientId ?? null, firebaseWebConfig: options.firebaseWebConfig ?? null }),
+=======
+    success({ googleClientId: options.googleClientId ?? null }),
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
   );
   app.post(
     "/api/login/google",
     { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } },
     async (req, reply) => {
+<<<<<<< HEAD
       const b = body(req);
       const verifier = b.credentialType === "firebase" ? options.verifyFirebase : options.verifyGoogle;
       if (!verifier)
+=======
+      if (!options.verifyGoogle)
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
         throw new HttpError(
           503,
           "O login com Google ainda não foi configurado neste servidor.",
         );
+<<<<<<< HEAD
       const profile = await verifier(
         text(b.credential, "credencial de autenticação", 8192),
+=======
+      const b = body(req);
+      const profile = await options.verifyGoogle(
+        text(b.credential, "credencial Google", 4096),
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
       );
       const found = (
         await db.query(

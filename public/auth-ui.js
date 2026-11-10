@@ -181,6 +181,7 @@
   const googleMark =
     '<svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.6 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.6l-7.9-6.1A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.8l-8 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
 
+<<<<<<< HEAD
   let firebaseLoading;
   const loadFirebase = () =>
     (firebaseLoading ||= new Promise((resolve, reject) => {
@@ -190,6 +191,17 @@
       s.async = true;
       s.onload = () => resolve();
       s.onerror = () => { firebaseLoading = null; reject(new Error("Não foi possível carregar o login Firebase. Atualize a página.")); };
+=======
+  let gisLoading;
+  const loadGis = () =>
+    (gisLoading ||= new Promise((resolve, reject) => {
+      if (window.google?.accounts?.id) return resolve();
+      const s = document.createElement("script");
+      s.src = "https://accounts.google.com/gsi/client";
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Sem conexão com o Google."));
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
       document.head.appendChild(s);
     }));
 
@@ -224,7 +236,11 @@
     const config = await getConfig();
     const clientId = config.googleClientId;
 
+<<<<<<< HEAD
     if (isNativeApp && !clientId) {
+=======
+    if (!clientId) {
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
       fallbackButton().onclick = () =>
         opts.onError(
           "O login com Google ainda não foi configurado no servidor Firebase.",
@@ -251,6 +267,7 @@
     }
 
     try {
+<<<<<<< HEAD
       if (!config.firebaseWebConfig) throw new Error("Firebase Web não configurado no servidor. Publique o backend atualizado.");
       await loadFirebase();
       window.CashFlowFirebase.initialize(config.firebaseWebConfig);
@@ -272,6 +289,27 @@
           opts.onError(message || "Não foi possível entrar pelo Firebase. Confira o provedor Google e o cliente OAuth no projeto Firebase.");
         } finally { button.disabled = false; }
       };
+=======
+      await loadGis();
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: (response) => opts.onCredential(response.credential),
+        ux_mode: "popup",
+        context: opts.text === "signup" ? "signup" : "signin",
+      });
+      container.innerHTML = "";
+      const width = Math.min(400, Math.max(220, container.clientWidth || 320));
+      window.google.accounts.id.renderButton(container, {
+        type: "standard",
+        theme: "outline",
+        size: "large",
+        shape: "pill",
+        text: opts.text === "signup" ? "signup_with" : "signin_with",
+        logo_alignment: "center",
+        width,
+        locale: "pt-BR",
+      });
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
     } catch (error) {
       fallbackButton().onclick = () =>
         opts.onError(error.message || "Não foi possível carregar o Google agora.");
@@ -283,11 +321,15 @@
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
+<<<<<<< HEAD
       body: JSON.stringify({
         ...extra,
         credential: credential?.type === "firebase" ? credential.token : credential,
         credentialType: credential?.type === "firebase" ? "firebase" : "google",
       }),
+=======
+      body: JSON.stringify({ credential, ...extra }),
+>>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
     });
     const data = await response.json().catch(() => ({}));
     return { response, data };
