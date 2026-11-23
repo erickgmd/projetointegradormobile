@@ -43,11 +43,12 @@ body {
 
 /* Lado esquerdo - Informações */
 .info-side {
-    flex: 1;
+    flex: 1 1 50%;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 70px;
+    padding: clamp(24px, 4vw, 70px);
     color: white;
     position: relative;
     z-index: 1;
@@ -93,7 +94,7 @@ body {
     line-height: 1.1;
     margin-bottom: 24px;
     color: #f0fdf4;
-    opacity: 0;
+    opacity: 1;
     animation: slideInLeft 1s ease-out 0.4s forwards;
 }
 
@@ -102,13 +103,12 @@ body {
     opacity: 0.8;
     line-height: 1.6;
     margin-bottom: 40px;
-    opacity: 0;
     animation: slideInLeft 1s ease-out 0.6s forwards;
 }
 
 .features {
     list-style: none;
-    opacity: 0;
+    opacity: 1;
     animation: slideInLeft 1s ease-out 0.8s forwards;
 }
 
@@ -148,7 +148,8 @@ body {
 
 /* Lado direito - Login */
 .login-side {
-    flex: 0 0 800px;
+    flex: 1 1 50%;
+    min-width: 0;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
     display: flex;
@@ -162,7 +163,7 @@ body {
     width: 100%;
     max-width: 400px;
     padding: 50px 40px;
-    opacity: 0;
+    opacity: 1;
     animation: slideInRight 1s ease-out 0.3s forwards;
 }
 
@@ -564,3 +565,4 @@ body {
 }
 .checkbox-wrapper input:focus-visible + .custom-checkbox { outline: 3px solid #1765cc; outline-offset: 2px; }
 .checkbox-wrapper { position: relative; min-height: 44px; }
+
