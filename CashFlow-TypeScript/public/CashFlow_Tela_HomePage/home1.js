@@ -79,6 +79,10 @@ class FinanceManager {
             this.autoSetType(e.target.value);
         });
 
+        document.getElementById('type')?.addEventListener('change', (e) => {
+            this.filterCategoriesByType(e.target.value);
+        });
+
         document.getElementById('generatePdfBtn')?.addEventListener('click', () => {
             this.generatePdfReport();
         });
@@ -110,12 +114,31 @@ class FinanceManager {
             const data = await response.json();
             this.customCategories = data.categories || [];
             const select = document.getElementById('category');
+            // Categorias próprias entram no grupo do tipo delas (Receitas/Despesas).
+            const groups = select ? [...select.querySelectorAll('optgroup')] : [];
             this.customCategories.forEach(c => {
                 if (![...select.options].some(o => o.value === c.nome)) {
-                    const option = new Option(c.nome, c.nome); select.add(option);
+                    const option = new Option(c.nome, c.nome);
+                    const group = groups.find(g => g.label === (c.tipo === 'income' ? 'Receitas' : 'Despesas'));
+                    (group || select).appendChild(option);
                 }
             });
+            this.filterCategoriesByType(document.getElementById('type')?.value || '');
         } catch (error) { console.warn('Categorias indisponíveis', error); }
+    }
+
+    // Com o tipo escolhido, a lista mostra só as categorias daquele tipo.
+    filterCategoriesByType(type) {
+        const select = document.getElementById('category');
+        if (!select) return;
+        const wanted = type === 'income' ? 'Receitas' : type === 'expense' ? 'Despesas' : '';
+        select.querySelectorAll('optgroup').forEach(group => {
+            const show = !wanted || group.label === wanted;
+            group.hidden = !show;
+            group.disabled = !show;
+        });
+        const selected = select.selectedOptions[0];
+        if (selected?.parentElement?.disabled) select.value = '';
     }
 
     editTransaction(id) {
@@ -124,6 +147,7 @@ class FinanceManager {
         this.editingId = id;
         this.transactionKey = null;
         for (const key of ['description','amount','category','type','date']) {
+            if (key === 'category') this.filterCategoriesByType(transaction.type);
             document.getElementById(key).value = key === 'date' ? String(transaction[key]).slice(0,10) : transaction[key];
         }
         const form = document.getElementById('transactionForm');
@@ -144,9 +168,16 @@ class FinanceManager {
         const date = document.getElementById('date').value;
 
         if (!description || !amount || !category || !type || !date) {
-            alert('Preencha todos os campos.');
+            this.showErrorMessage('Preencha descrição, valor, data, tipo e categoria.');
             return;
         }
+        if (!(Number(amount) > 0)) {
+            this.showErrorMessage('Informe um valor maior que zero.');
+            return;
+        }
+        const editing = Boolean(this.editingId);
+        const submitBtn = document.querySelector('#transactionForm button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
 
         const formData = new FormData();
         if (this.editingId) formData.append('id', this.editingId);
@@ -180,13 +211,15 @@ class FinanceManager {
                 await this.loadTransactions();
                 this.updateDisplay();
                 this.clearForm();
-                this.showSuccessMessage('Transação adicionada com sucesso!');
+                this.showSuccessMessage(editing ? 'Transação atualizada com sucesso!' : 'Transação adicionada com sucesso!');
             } else {
-                alert('Erro: ' + result.message);
+                this.showErrorMessage(result.message || 'Não foi possível salvar a transação.');
             }
         } catch (error) {
             console.error('Erro ao salvar transação:', error);
-            alert('Erro ao salvar transação: ' + error.message);
+            this.showErrorMessage('Não foi possível salvar a transação. Verifique sua conexão e tente novamente.');
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
         }
     }
 
@@ -195,15 +228,20 @@ class FinanceManager {
         document.getElementById('cancelEdit')?.remove();
         document.getElementById('transactionForm')?.reset();
         this.setTodayDate();
+        this.filterCategoriesByType('');
     }
 
-    showSuccessMessage(message) {
+    showErrorMessage(message) {
+        this.showSuccessMessage(message, true);
+    }
+
+    showSuccessMessage(message, isError = false) {
         const notification = document.createElement('div');
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #48bb78;
+            background: ${isError ? '#dc2626' : '#48bb78'};
             color: white;
             padding: 15px 20px;
             border-radius: 8px;
@@ -212,6 +250,7 @@ class FinanceManager {
             animation: slideIn 0.3s ease;
         `;
         notification.textContent = message;
+        notification.setAttribute('role', isError ? 'alert' : 'status');
 
         const style = document.createElement('style');
         style.textContent = `
@@ -226,7 +265,7 @@ class FinanceManager {
         setTimeout(() => {
             notification.remove();
             style.remove();
-        }, 3000);
+        }, isError ? 5000 : 3000);
     }
 
     async deleteTransaction(id) {
@@ -256,18 +295,55 @@ class FinanceManager {
                 this.updateDisplay();
                 this.showSuccessMessage('Transação excluída com sucesso!');
             } else {
-                alert('Erro ao excluir transação: ' + result.message);
+                this.showErrorMessage(result.message || 'Não foi possível excluir a transação.');
             }
         } catch (error) {
             console.error('Erro ao excluir transação:', error);
-            alert('Erro ao excluir transação: ' + error.message);
+            this.showErrorMessage('Não foi possível excluir a transação. Tente novamente.');
         }
     }
 
+    // Pede para digitar EXCLUIR antes de apagar todas as transações.
+    confirmarExclusaoTotal() {
+        return new Promise(resolve => {
+            if (typeof HTMLDialogElement === 'undefined') {
+                resolve(window.prompt('Para excluir TODAS as transações, digite EXCLUIR:') === 'EXCLUIR');
+                return;
+            }
+            const total = this.transactions.length;
+            const dialog = document.createElement('dialog');
+            dialog.className = 'confirm-dialog';
+            dialog.setAttribute('aria-labelledby', 'confirmTitulo');
+            dialog.innerHTML = `
+                <form method="dialog" class="confirm-sheet">
+                    <h3 id="confirmTitulo">Excluir todas as transações?</h3>
+                    <p>Isso apaga ${total} transaç${total === 1 ? 'ão' : 'ões'} de forma definitiva. Não dá para desfazer.</p>
+                    <label for="confirmTexto">Para confirmar, digite <strong>EXCLUIR</strong>:</label>
+                    <input id="confirmTexto" type="text" autocomplete="off" autocapitalize="characters">
+                    <div class="confirm-actions">
+                        <button type="button" class="btn-secondary" data-acao="cancelar">Cancelar</button>
+                        <button type="submit" class="btn-danger" data-acao="excluir" disabled>Excluir tudo</button>
+                    </div>
+                </form>`;
+            document.body.appendChild(dialog);
+            const input = dialog.querySelector('#confirmTexto');
+            const excluir = dialog.querySelector('[data-acao="excluir"]');
+            let ok = false;
+            input.addEventListener('input', () => { excluir.disabled = input.value.trim().toUpperCase() !== 'EXCLUIR'; });
+            dialog.querySelector('[data-acao="cancelar"]').addEventListener('click', () => dialog.close());
+            dialog.querySelector('form').addEventListener('submit', () => { ok = input.value.trim().toUpperCase() === 'EXCLUIR'; });
+            dialog.addEventListener('close', () => { dialog.remove(); resolve(ok); });
+            dialog.showModal();
+            input.focus();
+        });
+    }
+
     async clearAllTransactions() {
-        if (!confirm('Tem certeza que deseja excluir TODAS as transações? Esta ação não pode ser desfeita!')) {
+        if (!this.transactions.length) {
+            this.showErrorMessage('Não há transações para excluir.');
             return;
         }
+        if (!(await this.confirmarExclusaoTotal())) return;
 
         try {
             const response = await fetch('/api/transacoes/limpar', {
@@ -289,11 +365,11 @@ class FinanceManager {
                 this.updateDisplay();
                 this.showSuccessMessage('Todas as transações foram excluídas!');
             } else {
-                alert('Erro ao limpar transações: ' + result.message);
+                this.showErrorMessage(result.message || 'Não foi possível excluir as transações.');
             }
         } catch (error) {
-            console.error('Erro ao limpar transações:', error);
-            alert('Erro ao limpar transações: ' + error.message);
+            console.error('Erro ao excluir transações:', error);
+            this.showErrorMessage('Não foi possível excluir as transações. Tente novamente.');
         }
     }
 
@@ -350,7 +426,12 @@ class FinanceManager {
         if (balanceEl) {
             balanceEl.textContent = this.formatCurrency(balance);
             balanceEl.style.color = balance >= 0 ? '#1F4BA0' : '#dc2626';
+            balanceEl.classList.toggle('is-negative', balance < 0);
         }
+        // Os cards seguem o filtro de mês do histórico; o rótulo mostra o período.
+        const month = document.getElementById('filterMonth')?.value || 'all';
+        const periodo = month === 'all' ? 'Todo o período' : this.formatMonthYear(month);
+        document.querySelectorAll('#dashboard .summary-period').forEach(el => { el.textContent = periodo; });
         if (balanceCardEl) {
             balanceCardEl.style.borderTopColor = balance >= 0 ? '#1F4BA0' : '#ef4444';
         }
@@ -836,14 +917,14 @@ class FinanceManager {
         const reportMonth = document.getElementById('reportMonth')?.value;
 
         if (!reportMonth) {
-            alert('Selecione um mês para gerar o relatório.');
+            this.showErrorMessage('Selecione um mês para gerar o relatório.');
             return;
         }
 
         const transactions = this.getTransactionsByMonth(reportMonth);
 
         if (transactions.length === 0) {
-            alert(`Nenhuma transação encontrada em ${this.formatMonthYear(reportMonth)}. O relatório não foi gerado.`);
+            this.showErrorMessage(`Nenhuma transação encontrada em ${this.formatMonthYear(reportMonth)}. O relatório não foi gerado.`);
             return;
         }
 
@@ -1274,8 +1355,24 @@ class FinanceManager {
 
         } catch (error) {
             console.error("Erro ao gerar PDF:", error);
-            alert("Erro ao gerar relatório: " + error.message);
+            this.showErrorMessage("Não foi possível gerar o relatório: " + error.message);
         }
+    }
+
+    // Erro da calculadora aparece no próprio card, e o resultado anterior some.
+    toolError(resultId, message) {
+        const result = document.getElementById(resultId);
+        if (!result) return;
+        result.style.display = 'none';
+        let el = result.parentElement.querySelector('.tool-error');
+        if (!el) {
+            el = document.createElement('p');
+            el.className = 'tool-error';
+            el.setAttribute('role', 'alert');
+            result.insertAdjacentElement('beforebegin', el);
+        }
+        el.textContent = message;
+        el.hidden = !message;
     }
 
     calculateSalary() {
@@ -1284,11 +1381,16 @@ class FinanceManager {
         const healthPlan = parseFloat(document.getElementById('healthPlan').value) || 0;
 
         if (!grossSalary || grossSalary <= 0) {
-            alert('Por favor, insira um salário bruto válido!');
+            this.toolError('salaryResult', 'Informe um salário bruto maior que zero.');
+            return;
+        }
+        if (dependents < 0 || healthPlan < 0) {
+            this.toolError('salaryResult', 'Dependentes e plano de saúde não podem ser negativos.');
             return;
         }
 
-        let result;try { result=window.CashFlowCalculators.salary2026(grossSalary,dependents,healthPlan); } catch(error){alert(error.message);return;}
+        let result;try { result=window.CashFlowCalculators.salary2026(grossSalary,dependents,healthPlan); } catch(error){this.toolError('salaryResult', error.message);return;}
+        this.toolError('salaryResult', '');
         const {inss,irrf,net:netSalary}=result;
 
         document.getElementById('inssValue').textContent = this.formatCurrency(inss);
@@ -1304,9 +1406,14 @@ class FinanceManager {
         const timePeriod = parseInt(document.getElementById('timePeriod').value) || 0;
 
         if (initialAmount < 0 || monthlyContribution < 0 || interestRate < 0 || timePeriod <= 0) {
-            alert('Por favor, insira valores válidos!');
+            this.toolError('interestResult', 'Use valores positivos e um período de pelo menos 1 ano.');
             return;
         }
+        if (initialAmount === 0 && monthlyContribution === 0) {
+            this.toolError('interestResult', 'Informe um valor inicial ou um aporte mensal.');
+            return;
+        }
+        this.toolError('interestResult', '');
 
         const monthlyRate = Math.pow(1 + interestRate / 100, 1 / 12) - 1;
         const months = timePeriod * 12;
@@ -1328,9 +1435,10 @@ class FinanceManager {
         const loanPeriod = parseInt(document.getElementById('loanPeriod').value) || 0;
 
         if (loanAmount <= 0 || loanRate < 0 || loanPeriod <= 0) {
-            alert('Por favor, insira valores válidos!');
+            this.toolError('loanResult', 'Informe o valor do empréstimo, uma taxa a partir de 0% e o prazo em meses.');
             return;
         }
+        this.toolError('loanResult', '');
 
         const monthlyRate = loanRate / 100;
         const monthlyPayment = window.CashFlowCalculators.loan(loanAmount,loanRate,loanPeriod);
@@ -1351,39 +1459,27 @@ class FinanceManager {
         const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 0;
 
         if (amount <= 0) {
-            alert('Por favor, insira um valor válido!');
-            return;
-        }
-
-        if (exchangeRate <= 0) {
-            alert('Por favor, insira uma taxa de câmbio válida!');
-            return;
-        }
-
-        if (fromCurrency === toCurrency) {
-            alert('Selecione moedas diferentes para conversão!');
+            this.toolError('currencyResult', 'Informe um valor maior que zero.');
             return;
         }
 
         let convertedAmount;
-        if (fromCurrency === 'BRL') {
-            convertedAmount = amount / exchangeRate;
-        } else if (toCurrency === 'BRL') {
-            convertedAmount = amount * exchangeRate;
-        } else {
-            alert('Para conversão entre duas moedas estrangeiras, converta primeiro para BRL.');
+        if (fromCurrency === toCurrency) {
+            // Mesma moeda: não precisa de cotação.
+            convertedAmount = amount;
+        } else if (fromCurrency !== 'BRL' && toCurrency !== 'BRL') {
+            this.toolError('currencyResult', 'Converta entre Real (BRL) e outra moeda. Para duas moedas estrangeiras, converta primeiro para BRL.');
             return;
+        } else if (exchangeRate <= 0) {
+            const estrangeira = fromCurrency === 'BRL' ? toCurrency : fromCurrency;
+            this.toolError('currencyResult', `Informe a cotação: quantos reais vale 1 ${estrangeira}.`);
+            return;
+        } else {
+            convertedAmount = fromCurrency === 'BRL' ? amount / exchangeRate : amount * exchangeRate;
         }
+        this.toolError('currencyResult', '');
 
-        let currencySymbol;
-        switch (toCurrency) {
-            case 'USD': currencySymbol = '$'; break;
-            case 'EUR': currencySymbol = '€'; break;
-            case 'GBP': currencySymbol = '£'; break;
-            default: currencySymbol = 'R$';
-        }
-
-        document.getElementById('convertedAmount').textContent = `${currencySymbol} ${convertedAmount.toFixed(2)}`;
+        document.getElementById('convertedAmount').textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: toCurrency }).format(convertedAmount);
         document.getElementById('currencyResult').style.display = 'block';
     }
 
@@ -1403,14 +1499,14 @@ class FinanceManager {
             'salario': 'Salário',
             'freelance': 'Freelance',
             'investimentos': 'Investimentos',
-            'outros-receitas': 'Outros (Receitas)',
+            'outros-receitas': 'Outras receitas',
             'alimentacao': 'Alimentação',
             'transporte': 'Transporte',
             'moradia': 'Moradia',
             'saude': 'Saúde',
             'educacao': 'Educação',
             'lazer': 'Lazer',
-            'outros-despesas': 'Outros (Despesas)'
+            'outros-despesas': 'Outras despesas'
         };
         return categoryNames[category] || category;
     }
@@ -1432,8 +1528,15 @@ class FinanceManager {
     }
 
     formatarPeriodo(item) {
-        if (item.Mes && item.AnoMes) {
-            return `${item.Mes}/${item.AnoMes}`;
+        // A API traz "Out-2026" e "2026-10"; mostra só uma vez: "out/2026".
+        const anoMes = String(item.AnoMes || item.anoMes || '');
+        const m = anoMes.match(/^(\d{4})-(\d{2})/);
+        if (m) {
+            const nomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+            return `${nomes[Number(m[2]) - 1] || m[2]}/${m[1]}`;
+        }
+        if (item.Mes) {
+            return String(item.Mes);
         }
         if (item.Periodo) {
             return item.Periodo;
@@ -1496,6 +1599,8 @@ class FinanceManager {
         if (!elMenorTaxa || !elMenorBanco || !elMaiorTaxa || !elMaiorBanco || !elMediaTaxa || !elTotal) return;
 
         elTotal.textContent = `${lista.length} registros`;
+        // Taxa 0,00% é dado não informado pelo banco: não entra em menor/maior/média.
+        lista = lista.filter(item => Number(item.TaxaJurosAoAno) > 0);
 
         if (!lista.length) {
             elMenorTaxa.textContent = "--";
@@ -1538,8 +1643,11 @@ class FinanceManager {
                     </p>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-                    <span class="transaction-amount income">${this.formatarPercentual(item.TaxaJurosAoAno)}</span>
-                    <small>${this.formatarPercentual(item.TaxaJurosAoMes)} ao mês</small>
+                    ${Number(item.TaxaJurosAoAno) > 0
+                        ? `<span class="transaction-amount income">${this.formatarPercentual(item.TaxaJurosAoAno)}</span>
+                    <small>${this.formatarPercentual(item.TaxaJurosAoMes)} ao mês</small>`
+                        : `<span class="transaction-amount">Não informada</span>
+                    <small>taxa não divulgada pelo banco</small>`}
                 </div>
             </div>
         `).join('');
@@ -1564,6 +1672,9 @@ class FinanceManager {
         });
 
         lista.sort((a, b) => {
+            // Sem taxa informada vai para o fim da lista.
+            const semA = !(Number(a.TaxaJurosAoAno) > 0), semB = !(Number(b.TaxaJurosAoAno) > 0);
+            if (semA !== semB) return semA ? 1 : -1;
             return ordenacao === "asc"
                 ? a.TaxaJurosAoAno - b.TaxaJurosAoAno
                 : b.TaxaJurosAoAno - a.TaxaJurosAoAno;
@@ -1702,54 +1813,8 @@ function initUserDropdown() {
 }
 
 function initCashFlowMelhorias() {
-
-    const chatbotFab = document.getElementById("chatbotFab");
-    const chatbotPanel = document.getElementById("chatbotPanel");
-    const closeChatbot = document.getElementById("closeChatbot");
-
-    chatbotFab?.addEventListener("click", () => {
-        chatbotPanel?.classList.toggle("hidden-chat");
-    });
-
-    closeChatbot?.addEventListener("click", () => {
-        chatbotPanel?.classList.add("hidden-chat");
-    });
-
-    document.getElementById("sendChat")?.addEventListener("click", () => {
-        const input = document.getElementById("chatInput");
-        const messages = document.getElementById("chatMessages");
-
-        if (!input || !messages || !input.value.trim()) return;
-
-        const pergunta = input.value.trim();
-        const texto = pergunta.toLowerCase();
-
-        let resposta = getCashBotResposta(pergunta);
-
-        messages.innerHTML += `<p><strong>Você:</strong> ${window.cashflowEscape(pergunta)}</p>`;
-        messages.innerHTML += `<p><strong>CashBot:</strong> ${resposta}</p>`;
-        input.value = "";
-        messages.scrollTop = messages.scrollHeight;
-    });
-
-    
-    document.querySelectorAll(".faq-question").forEach((button) => {
-        button.addEventListener("click", () => {
-            const input = document.getElementById("chatInput");
-            const send = document.getElementById("sendChat");
-
-            if (input && send) {
-                input.value = button.dataset.question || button.textContent.trim();
-                send.click();
-            }
-        });
-    });
-
-    document.getElementById("chatInput")?.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-            document.getElementById("sendChat")?.click();
-        }
-    });
+    // O CashBot é controlado por initCashBotAnimated (mais abaixo). A versão antiga
+    // daqui chamava uma função inexistente (getCashBotResposta) a cada Enter.
 }
 
 function initResumoClicavelEAlertas() {
@@ -1973,8 +2038,50 @@ function initThemePanel() {
             .replace(/[\u0300-\u036f]/g, "");
     }
 
+    const moeda = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+    // Perguntas sobre os próprios números ("quanto gastei esse mês?") respondem com os dados da conta.
+    function getDataAnswer(text) {
+        const fm = window.financeManager;
+        const lista = fm && Array.isArray(fm.transactions) ? fm.transactions : null;
+        if (!lista) return "";
+        const pedeValor = /\b(quanto|qual|quais|meu|minha|total|onde)\b/.test(text) || /(gastei|recebi|ganhei|sobrou|entrou)/.test(text);
+        if (!pedeValor) return "";
+        const querGasto = /(gast|despes|paguei|saiu|saida)/.test(text);
+        const querReceita = /(receb|receita|ganhei|ganho|entrou|entrada|salario)/.test(text);
+        const querSaldo = /(saldo|sobrou|sobra|balanco)/.test(text);
+        const querMaior = /(maior|mais gastei|onde mais|categoria)/.test(text) && querGasto;
+        if (!querGasto && !querReceita && !querSaldo) return "";
+
+        const hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).format(new Date()).slice(0, 7);
+        const tudo = /(total|geral|tudo|sempre|todo)/.test(text) && !/(mes|mês)/.test(text);
+        const doPeriodo = tudo ? lista : lista.filter(t => String(t.date).slice(0, 7) === hoje);
+        const rotulo = tudo ? "no total" : "neste mês";
+        const soma = (tipo) => doPeriodo.filter(t => t.type === tipo).reduce((acc, t) => acc + Math.round(Number(t.amount) * 100), 0) / 100;
+        const receitas = soma("income"), despesas = soma("expense");
+
+        if (querMaior) {
+            const porCategoria = {};
+            doPeriodo.filter(t => t.type === "expense").forEach(t => { porCategoria[t.category] = (porCategoria[t.category] || 0) + Number(t.amount); });
+            const top = Object.entries(porCategoria).sort((a, b) => b[1] - a[1])[0];
+            if (!top) return `Você não tem despesas registradas ${rotulo}.`;
+            const nome = typeof fm.formatCategory === "function" ? fm.formatCategory(top[0]) : top[0];
+            return `Sua maior despesa ${rotulo} é em ${nome}: ${moeda(top[1])}.`;
+        }
+        if (querSaldo) {
+            const saldo = Math.round(receitas * 100 - despesas * 100) / 100;
+            return `Seu saldo ${rotulo} é ${moeda(saldo)} (receitas ${moeda(receitas)} − despesas ${moeda(despesas)}).`;
+        }
+        if (querGasto && querReceita)
+            return `${rotulo[0].toUpperCase() + rotulo.slice(1)} você recebeu ${moeda(receitas)} e gastou ${moeda(despesas)}.`;
+        if (querGasto) return `Você gastou ${moeda(despesas)} ${rotulo}.`;
+        return `Você recebeu ${moeda(receitas)} ${rotulo}.`;
+    }
+
     function getCashBotAnswer(question) {
         const text = normalizeText(question);
+        const dataAnswer = getDataAnswer(text);
+        if (dataAnswer) return dataAnswer;
 
         const answers = [
             {
@@ -1987,7 +2094,7 @@ function initThemePanel() {
             },
             {
                 keys: ["limpar", "limpar tudo", "todas as transacoes", "zerar"],
-                answer: "Para apagar todas as transações, clique em Limpar Tudo. O sistema pedirá confirmação antes de excluir."
+                answer: "Para apagar todas as transações, use o botão Excluir todas as transações, no fim do Histórico. Para confirmar, é preciso digitar EXCLUIR."
             },
             {
                 keys: ["filtrar", "filtro", "mes", "tipo", "receita", "despesa"],
@@ -2035,7 +2142,7 @@ function initThemePanel() {
             return "Para investir melhor, defina objetivo, prazo e perfil de risco. Para curto prazo, priorize segurança e liquidez.";
         }
 
-        return "Posso ajudar com transações, filtros, relatórios, gráficos, saldo, ferramentas, tema, contraste, VLibras e alertas. Clique em uma pergunta rápida ou digite sua dúvida.";
+        return "Posso ajudar com transações, filtros, relatórios, gráficos, saldo, ferramentas, tema, contraste, VLibras e alertas. Também respondo perguntas como \"quanto gastei este mês?\" ou \"qual meu saldo?\".";
     }
 
     function initCashBotAnimated() {
@@ -2124,6 +2231,8 @@ function initThemePanel() {
 
             if (!text) return;
 
+            // Depois da primeira pergunta, os atalhos recolhem e a conversa ganha espaço.
+            panel.classList.add("cashbot-chatting");
             createMessage("user", text);
             input.value = "";
             showTyping(text);
