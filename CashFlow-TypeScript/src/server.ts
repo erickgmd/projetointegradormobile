@@ -1,7 +1,8 @@
 import "dotenv/config";
 import { buildApp } from "./app.js";
 import { connectDatabase } from "./db.js";
-import { resetSender } from "./integrations/mail.js";
+import { resetSender, confirmSender } from "./integrations/mail.js";
+import { checkEmailDomain } from "./integrations/email-check.js";
 import { googleVerifier } from "./integrations/google.js";
 import { TelegramService } from "./integrations/telegram.js";
 import { saveTransaction, monthlySummary } from "./services/finance.js";
@@ -18,6 +19,8 @@ const app = await buildApp(db, {
   googleClientId: process.env.GOOGLE_CLIENT_ID || undefined,
   verifyGoogle: googleVerifier(process.env.GOOGLE_CLIENT_ID || undefined),
   sendReset: resetSender(),
+  sendConfirmation: confirmSender(),
+  checkEmail: checkEmailDomain,
   telegramSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
 });
 let stopWorkers = async () => {};
