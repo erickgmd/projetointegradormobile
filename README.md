@@ -1,148 +1,231 @@
-# CashFlow versão 3
+# 💰 CashFlow
 
-Projeto web com backend TypeScript/Fastify/PostgreSQL e módulo Telegram/OCR, adaptado aos41 requisitos funcionais e25 não funcionais recebidos. A situação de cada requisito está em `docs/requisitos/MATRIZ.md`: implementação em código não equivale a comprovar SLA, acessibilidade completa ou disponibilidade em produção.
+Aplicação de gestão financeira pessoal desenvolvida como Projeto Integrador do curso de Ciência da Computação.
 
-## Atualizar sua instalação Windows com Supabase
+O CashFlow permite organizar receitas e despesas, acompanhar o saldo e consultar informações financeiras em uma interface web, com adaptação para Android.
 
-1. Pare a versão anterior com Ctrl+C. Faça backup do banco. Extraia este ZIP em outra pasta.
-2. Copie seu `.env` e `supabase-ca.crt` da instalação anterior para a pasta nova que contém `package.json`. O pacote não inclui credenciais reais.
-3. Preserve sua `DATABASE_URL` e acrescente no `.env`:
+## 🎯 Objetivo
 
-```env
-DB_SSL=true
-DB_CA_FILE=./supabase-ca.crt
-APP_ORIGIN=http://localhost:3001
-PORT=3001
-HOST=127.0.0.1
-NODE_ENV=development
+Auxiliar o usuário no controle das finanças pessoais, oferecendo uma visão organizada das movimentações e recursos para apoiar o planejamento financeiro.
+
+## ✨ Funcionalidades
+
+- Cadastro e autenticação de usuários.
+- Login com conta Google.
+- Recuperação de senha por e-mail, mediante configuração SMTP.
+- Cadastro de receitas e despesas.
+- Histórico de transações com filtros.
+- Visualização de saldo, receitas e despesas.
+- Gráficos e resumo por categoria.
+- Relatórios financeiros e exportação em PDF.
+- Perfil e configurações do usuário.
+- Definição de gasto máximo.
+- Ajustes de aparência e acessibilidade.
+- Integração com VLibras.
+- Assistente de orientação financeira.
+- Versão Android integrada à aplicação web.
+
+## 🛠️ Tecnologias
+
+| Camada | Tecnologias |
+|---|---|
+| Interface web | HTML, CSS e JavaScript |
+| Backend | Node.js, TypeScript e Fastify |
+| Banco de dados | PostgreSQL hospedado no Supabase |
+| Autenticação | Sessões com cookies e integração Google |
+| Envio de e-mails | Nodemailer e SMTP |
+| Gráficos | Chart.js |
+| Relatórios PDF | jsPDF |
+| Aplicativo Android | Capacitor e Android Studio |
+| Hospedagem web | Render |
+| Gerenciamento de testes | Qase |
+
+## 📁 Organização do projeto
+
+```text
+CashFlow-TypeScript/
+├── public/          # Páginas, estilos e scripts da interface
+├── src/             # Código-fonte do backend
+│   ├── integrations/
+│   └── services/
+├── scripts/         # Scripts auxiliares
+├── tests/           # Testes automatizados
+├── mobile/          # Projeto de integração mobile
+└── package.json
 ```
 
-`DB_CA_FILE` permite usar o certificado sem repetir o comando PowerShell `NODE_EXTRA_CA_CERTS`. Use a senha codificada na URL apenas uma vez, conforme sua conexão já validada.
+## ⚙️ Pré-requisitos
 
-4. No PowerShell, dentro da pasta nova, execute um comando por vez:
+Para executar a versão web:
 
-```powershell
-npm ci
+- Node.js 22 ou superior.
+- npm.
+- PostgreSQL local ou uma conexão com o Supabase.
+- Git.
+
+Para compilar a versão Android, também são necessários Android Studio, Android SDK e um JDK compatível com as versões de Gradle e do plugin Android utilizadas pelo projeto.
+
+## 🚀 Executando a aplicação web
+
+### 1. Clone o repositório
+
+```bash
+git clone https://github.com/erickgmd/projetointegradormobile.git
+cd projetointegradormobile/CashFlow-TypeScript
+```
+
+### 2. Instale as dependências
+
+```bash
+npm install
+```
+
+### 3. Configure as variáveis de ambiente
+
+Crie um arquivo `.env` na pasta `CashFlow-TypeScript`. Utilize o `.env.example` do repositório como referência, se disponível.
+
+Exemplo básico:
+
+```env
+NODE_ENV=development
+HOST=127.0.0.1
+PORT=3001
+
+APP_ORIGIN=http://127.0.0.1:3001
+DATABASE_URL=postgresql://USUARIO:SENHA@HOST:PORTA/BANCO
+
+GOOGLE_CLIENT_ID=SEU_CLIENT_ID_WEB
+
+SMTP_HOST=SEU_SERVIDOR_SMTP
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=SEU_USUARIO_SMTP
+SMTP_PASSWORD=SUA_SENHA_SMTP
+SMTP_FROM=CashFlow <seu-email@dominio.com>
+```
+
+Substitua os valores de exemplo pelas configurações do seu ambiente.
+
+> Nunca publique o arquivo `.env`, senhas, chaves privadas ou arquivos de assinatura Android no GitHub.
+
+### 4. Prepare o banco de dados
+
+```bash
 npm run db:migrate
+```
+
+Confira a conexão com o banco e os requisitos de SSL antes de executar as migrações.
+
+### 5. Inicie em desenvolvimento
+
+```bash
+npm run dev
+```
+
+Acesse:
+
+```text
+http://127.0.0.1:3001
+```
+
+### 6. Execute a versão compilada
+
+```bash
 npm run build
 npm start
 ```
 
-Acesse **http://localhost:3001**. Requisitos: Node.js 22 ou superior; recomendado24.
+## 🔐 Autenticação com Google
 
-A migração003 acrescenta as colunas do login com Google e do "Lembrar de mim". A migração002 acrescenta tabelas, preferências, consentimento, validade dos tokens e políticas RLS. Mantém os dados financeiros, não converte `renda`/`despesas` varchar do esquema antigo e converte os códigos Telegram para texto. Campos complementares do cadastro tornam-se opcionais. Categorias legadas de até100 caracteres são importadas.
+O login Google exige um cliente OAuth configurado para a aplicação.
 
-**RLS:** a migração deve ser executada pelo proprietário do banco, capaz de criar e conceder o papel `cashflow_app`. Ela restringe os papéis públicos `anon` e `authenticated` do Supabase: os dados passam a ser acessados pelo backend. Teste primeiro em cópia do banco, especialmente se houver outro aplicativo usando a API direta do Supabase. Recriar políticas não remove políticas de terceiros, mas uma política restritiva mantém o isolamento do papel do CashFlow.
+Para a versão web:
 
-Links Telegram antigos precisam ser gerados e vinculados novamente no bot novo, porque o código passa a ter hash, validade de10 min e consumo único. Senhas bcrypt PHP continuam reconhecidas; sessões antigas são encerradas por inatividade ou logout.
+1. Configure o cliente OAuth do tipo Aplicativo da Web.
+2. Cadastre as origens JavaScript autorizadas dos ambientes local e publicado.
+3. Defina `GOOGLE_CLIENT_ID` no servidor.
+4. Confirme que o cliente utilizado pela interface corresponde ao esperado pelo backend.
 
-## Funções incluídas
+A versão Android também exige a configuração do identificador do aplicativo e das impressões digitais dos certificados de assinatura.
 
-Cadastro em três etapas com dados complementares opcionais; login; recuperação por email; sessão com30 min de inatividade; edição/exclusão de transações; categorias próprias; despesa rápida; resumo e filtros; limite mensal e avisos80/100%; relatórios PDF; ferramentas financeiras; preferências de tema/acessibilidade; consentimento e exclusão de conta.
+> A assinatura de desenvolvimento, a chave de upload e a chave de assinatura utilizada pelo Google Play podem ser diferentes. Configure o certificado correspondente à versão instalada.
 
-O módulo Telegram oferece vínculo, receitas/despesas por texto, saldo, extrato e comprovante por foto com OCR e confirmação antes de salvar. O arquivo de imagem é processado em memória e descartado; o cache de OCR contém apenas o modelo de idioma. A foto original no serviço Telegram segue as regras desse serviço.
+## ✉️ Recuperação de senha
 
-Os gráficos e a biblioteca PDF são fornecidos localmente em `public/vendor/`. ViaCEP, Banco Central e VLibras dependem de internet; falhas nesses serviços não desabilitam o registro financeiro. A calculadora salarial está identificada como simulação CLT 2026; fontes e limites em `docs/requisitos/CALCULOS.md`.
+A recuperação utiliza um link enviado por e-mail.
 
-O aplicativo Android fica em `mobile/` (Capacitor 8) e abre as mesmas telas do servidor. O passo a passo para instalar, testar no emulador do Android Studio e gerar o APK está em `docs/MOBILE_ANDROID.md`.
+Para habilitar o envio no ambiente publicado:
 
-## Recuperação de senha por email
+- Configure as variáveis SMTP.
+- Defina `APP_ORIGIN` com a URL pública HTTPS.
+- Verifique as credenciais e as permissões do provedor de e-mail.
 
-Configure no `.env` os dados SMTP do seu provedor:
+Em desenvolvimento, quando o SMTP não estiver configurado, o projeto pode apresentar o link de recuperação no terminal. Esse comportamento não substitui o envio de e-mail em produção.
 
-```env
-APP_ORIGIN=http://localhost:3001
-SMTP_HOST=smtp.seu-provedor.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=seu-usuario
-SMTP_PASSWORD=sua-senha-smtp
-SMTP_FROM=CashFlow <endereco-autorizado@seu-dominio.com>
-```
+## 🧪 Testes
 
-Sem SMTP em produção, a recuperação informa indisponibilidade; em desenvolvimento, o link aparece no terminal do servidor. Exemplo com Gmail e configuração do login com Google em `docs/ATUALIZACAO_NOV2026.md`. Com SMTP, a resposta não revela se o email existe. O link dura15 min, é de uso único e a redefinição revoga todas as sessões. Em produção, `APP_ORIGIN` deve usar seu domínio HTTPS e o remetente deve ser autorizado pelo provedor.
+Verifique os tipos do projeto:
 
-## Bot Telegram e OCR
-
-1. Crie um bot no BotFather e configure `TELEGRAM_BOT_TOKEN` no `.env`.
-2. Gere um segredo local:
-
-```powershell
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-
-3. Copie o resultado para `TELEGRAM_WEBHOOK_SECRET`. Publique a aplicação em HTTPS (ou utilize um túnel HTTPS para desenvolvimento), ajuste `APP_ORIGIN` e reinicie o servidor.
-4. Prepare o modelo português de OCR antes do primeiro uso:
-
-```powershell
-npm run ocr:prepare
-```
-
-5. Registre o webhook:
-
-```powershell
-npm run telegram:webhook
-```
-
-O webhook usa a mesma aplicação e banco; o computador/servidor precisa permanecer acessível. `localhost` sozinho não recebe mensagens do Telegram.
-
-No Perfil, informe seu username, gere o código e envie ao bot em chat privado:
-
-```text
-/vincular CODIGO_GERADO
-receita salario 2500,00
-despesa mercado 35,90
-/saldo
-/extrato
-```
-
-Envie uma foto de comprovante legível com estabelecimento, data e total. A prévia oferece Confirmar/Cancelar e expira em15 min. Não salvará automaticamente. O processamento tem limite de tempo e pode pedir nova foto ou registro textual se a leitura falhar. O prazo de15 s é uma meta a medir no ambiente publicado, inclusive com o modelo aquecido; não uma garantia obtida nos testes com OCR simulado.
-
-As atualizações e os alertas usam filas no PostgreSQL, com retry. Transações financeiras têm idempotência persistente, inclusive no reenvio de confirmação OCR. Mensagens externas são entrega ao menos uma vez: se o processo cair depois de enviar e antes de confirmar no banco, a mensagem pode se repetir; o lançamento financeiro permanece único.
-
-## Docker local
-
-```powershell
-docker compose up --build -d
-```
-
-Cria banco local independente do Supabase, exposto em `localhost:5433`; aplicação em `localhost:3001`. O volume mantém os dados. Nunca use `docker compose down -v` se pretende preservá-los. A configuração local não injeta automaticamente as credenciais SMTP/Telegram do `.env` no contêiner; use a configuração de produção ou ajuste o serviço explicitamente.
-
-## Publicação e GitHub
-
-O exemplo `compose.production.yaml` acrescenta Caddy/HTTPS, reinício automático e remove a exposição direta do Node e do banco. Requer Docker Compose2.24+ e um domínio com DNS apontando para o servidor. Preencha `CASHFLOW_DOMAIN`, uma senha própria para PostgreSQL e os dados SMTP/Telegram no `.env`. Esse exemplo utiliza o banco do Compose; para manter Supabase na nuvem, ajuste explicitamente `DATABASE_URL`, `DB_SSL` e a montagem do arquivo CA no serviço `app`.
-
-```powershell
-docker compose -f compose.yaml -f compose.production.yaml up --build -d
-```
-
-Em produção, `NODE_ENV=production`, origem HTTPS e cookies Secure são obrigatórios. `TRUST_PROXY=true` só deve ser usado com o Node acessível exclusivamente pelo proxy confiável. Defina o operador e o contato de privacidade da instância antes de publicar. Configure backup externo, retenção de backups, monitoramento e atualizações. A meta de95% de disponibilidade precisa de histórico de monitoramento.
-
-O workflow `.github/workflows/validacao.yml` executa tipos, testes e build. A publicação no repositório oficial ainda depende de identificar seu endereço; nenhum repositório remoto foi alterado neste trabalho. Não versione `.env`, certificados privados, tokens ou dados reais. O `.gitignore` cobre esses arquivos.
-
-## Estrutura e verificações
-
-- `src/services/`: finanças, recuperação/exclusão, filas.
-- `src/integrations/`: Telegram, OCR e SMTP.
-- `src/db.ts`: conexão TLS, transações e papel RLS por usuário.
-- `src/app.ts` e `src/routes-requirements.ts`: HTTP e contratos de API.
-- `database/`: migrações001 e002.
-- `public/`: telas, preferências e bibliotecas locais.
-- `tests/`: testes de API, finanças, RLS, bot, filas, UI e auditoria automatizada.
-- `docs/requisitos/`: fonte, matriz, cálculos e plano de aceite.
-
-```powershell
+```bash
 npm run check
-npm test
-npm run build
 ```
 
-Os testes SQL usam PGlite, a API usa Fastify inject e a UI usa JSDOM/axe. Não houve acesso ao seu Supabase, envio de email/mensagem real, OCR real, execução Docker nem inspeção em navegadores reais. Auditoria automática de acessibilidade não incluiu contraste de cores e não certifica WCAG2.1AA. Veja `docs/VALIDACAO.md` e `docs/requisitos/ACEITE.md`.
-# Login Google com Firebase
+Execute os testes automatizados:
 
-<<<<<<< HEAD
-Esta versão usa Firebase Authentication com popup SDK no site e troca REST no backend para Android. Siga [INTEGRACAO_FIREBASE.md](INTEGRACAO_FIREBASE.md) antes de publicar. As configurações públicas estão em config/firebase-web.json (site) e config/firebase.json (Android); preserve o pacote com.Cashflow. As instruções antigas de GOOGLE_CLIENT_ID abaixo foram substituídas por essa configuração. Ative Google e autorize o domínio no Firebase.
-=======
-Esta versão usa Firebase Authentication no backend para o login Google web/Android. Siga [INTEGRACAO_FIREBASE.md](INTEGRACAO_FIREBASE.md) antes de publicar. A configuração pública já foi gerada a partir do google-services.json enviado; preserve o pacote com.Cashflow. As instruções antigas de GOOGLE_CLIENT_ID abaixo foram substituídas por config/firebase.json / FIREBASE_WEB_CLIENT_ID.
->>>>>>> d9bf11a4561965d4e81f4674fbd3672dba96aef6
+```bash
+npm test
+```
 
+Os casos e registros de execução são gerenciados no [projeto CashFlow no Qase](https://app.qase.io/project/CASHFLOW).
+
+A cobertura planejada inclui:
+
+- Autenticação e validação de formulários.
+- Cadastro e validação de transações.
+- Resumo financeiro.
+- Encerramento e proteção de sessão.
+- Navegação por teclado.
+- Recuperação de senha.
+- Comportamentos da versão Android.
+
+> Um caso cadastrado não significa um teste executado. Resultados aprovados devem estar associados à execução real e às respectivas evidências. Testes web não substituem testes no aplicativo Android.
+
+## 📱 Versão Android
+
+A adaptação mobile utiliza Capacitor para integrar a interface web ao aplicativo Android.
+
+Para distribuir uma versão pelo Google Play Console:
+
+1. Configure o endereço público da aplicação.
+2. Sincronize o projeto mobile com o Android.
+3. Abra o projeto no Android Studio.
+4. Atualize o `versionCode` a cada nova publicação.
+5. Gere um Android App Bundle assinado no formato `.aab`.
+6. Envie o arquivo para a faixa de testes correspondente.
+
+Mantenha o identificador do aplicativo e a assinatura compatíveis com a aplicação já cadastrada no Google Play.
+
+## 🌐 Ambiente publicado
+
+[https://projetointegradormobile.onrender.com](https://projetointegradormobile.onrender.com)
+
+A disponibilidade depende da infraestrutura e das configurações do serviço de hospedagem.
+
+## 🛡️ Cuidados de segurança
+
+- Utilize HTTPS no ambiente publicado.
+- Mantenha credenciais em variáveis de ambiente.
+- Não exponha credenciais do banco no frontend.
+- Preserve a validação dos certificados SSL.
+- Utilize dados fictícios nos testes.
+- Não inclua senhas, tokens ou dados pessoais nas evidências.
+- Faça backup do banco antes de alterações estruturais.
+- Guarde as chaves de assinatura Android em local seguro.
+
+## 🎓 Contexto acadêmico
+
+Projeto desenvolvido para integrar conhecimentos de desenvolvimento web e mobile, banco de dados, engenharia de software, acessibilidade e qualidade de software.
+
+## 👥 Equipe
+
+Desenvolvido pela equipe do Projeto Integrador CashFlow.
