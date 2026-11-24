@@ -940,3 +940,12 @@ body.theme-dark select:focus { background: #020617 !important; color: #f8fafc !i
 .perfil-status { margin: 12px 0; padding: 10px 14px; border-radius: 10px; font-weight: 600; }
 .perfil-status.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
 .perfil-status.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* Selo de confirmação do email. */
+.email-status { margin: 6px 0 0; font-size: 0.88rem; font-weight: 600; }
+.email-status.ok { color: #15803d; }
+.email-status.pendente { color: #b45309; }
+.email-status-btn { background: none; border: none; padding: 0; color: #1d4ed8; font: inherit; text-decoration: underline; cursor: pointer; }
+body.theme-dark .email-status.ok { color: #4ade80; }
+body.theme-dark .email-status.pendente { color: #fbbf24; }
+body.theme-dark .email-status-btn { color: #93c5fd; }
