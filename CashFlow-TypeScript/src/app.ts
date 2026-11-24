@@ -28,6 +28,11 @@ import {
   fullName,
 } from "./validation.js";
 import type { GoogleVerifier } from "./integrations/google.js";
+import type { EmailCheck } from "./integrations/email-check.js";
+import {
+  confirmationToken,
+  readConfirmationToken,
+} from "./services/email-confirm.js";
 import type { FastifyReply, FastifyRequest } from "fastify";
 declare module "fastify" {
   interface FastifyRequest {
@@ -69,6 +74,9 @@ export async function buildApp(
     // Login com Google: Client ID Web público e verificador do ID token.
     googleClientId?: string;
     verifyGoogle?: GoogleVerifier;
+    // Verificação de email: domínio real (DNS) e link de confirmação.
+    checkEmail?: EmailCheck;
+    sendConfirmation?: (email: string, token: string, nome?: string) => Promise<void>;
   } = {},
 ) {
   const app = Fastify({
@@ -172,6 +180,7 @@ export async function buildApp(
         "/api/login/google",
         "/api/config/publica",
         "/api/cadastro/etapa1",
+        "/api/email/confirmar",
         "/api/health",
         "/api/senha/recuperar",
         "/api/senha/redefinir",
@@ -233,6 +242,68 @@ export async function buildApp(
       if (keys.includes("gasto_maximo")) await scheduleAlerts(tx, userId);
     });
   };
+  // Domínio do email precisa existir e receber mensagens (quando configurado).
+  const ensureRealEmail = async (address: string) => {
+    if (!options.checkEmail) return;
+    const result = await options.checkEmail(address);
+    if (!result.ok)
+      throw new HttpError(
+        400,
+        result.message ?? "Esse email não parece existir. Confira o endereço.",
+      );
+  };
+  const sendConfirmationFor = async (userId: number, address: string, nome?: string) => {
+    if (!options.sendConfirmation) return false;
+    try {
+      await options.sendConfirmation(address, confirmationToken(userId, address), nome);
+      return true;
+    } catch (error) {
+      app.log.warn({ err: error }, "Falha ao enviar confirmação de email.");
+      return false;
+    }
+  };
+  const markEmailConfirmed = (userId: number) =>
+    userDatabase(db, userId).query(
+      "UPDATE usuarios SET preferencias=COALESCE(preferencias,'{}'::jsonb)||jsonb_build_object('emailConfirmadoEm',to_jsonb(NOW())) WHERE id=$1 AND NOT (COALESCE(preferencias,'{}'::jsonb) ? 'emailConfirmadoEm')",
+      [userId],
+    );
+  app.post(
+    "/api/email/confirmar",
+    { config: { rateLimit: { max: 20, timeWindow: "15 minutes" } } },
+    async (req) => {
+      const data = readConfirmationToken(body(req).token);
+      if (!data) throw new HttpError(400, "Link de confirmação inválido.");
+      const user = (
+        await db.query("SELECT id,email FROM usuarios WHERE id=$1", [data.userId])
+      ).rows[0];
+      if (!user || String(user.email).toLowerCase() !== data.email)
+        throw new HttpError(400, "Este link não vale mais: o email da conta mudou. Peça um novo no app.");
+      if (data.expired)
+        throw new HttpError(400, "Este link expirou. Entre no CashFlow e peça um novo.");
+      await markEmailConfirmed(user.id);
+      return success({ message: "Email confirmado!", email: user.email });
+    },
+  );
+  app.post(
+    "/api/email/reenviar",
+    { config: { rateLimit: { max: 3, timeWindow: "15 minutes" } } },
+    async (req) => {
+      const user = (
+        await userDatabase(db, req.userId!).query(
+          "SELECT id,nome,email,preferencias FROM usuarios WHERE id=$1",
+          [req.userId],
+        )
+      ).rows[0];
+      if (!user) throw new HttpError(404, "Usuário não encontrado.");
+      if (user.preferencias?.emailConfirmadoEm)
+        return success({ message: "Seu email já está confirmado.", confirmado: true });
+      if (!options.sendConfirmation)
+        throw new HttpError(503, "O envio de emails está indisponível no momento. Tente mais tarde.");
+      if (!(await sendConfirmationFor(user.id, user.email, user.nome)))
+        throw new HttpError(503, "Não conseguimos enviar o email agora. Tente de novo em alguns minutos.");
+      return success({ message: `Enviamos um novo link para ${user.email}.` });
+    },
+  );
   app.get("/api/health", async () => {
     await db.query("SELECT 1");
     return success();
@@ -247,45 +318,30 @@ export async function buildApp(
           400,
           "Leia e aceite os Termos de Uso e a Política de Privacidade para criar sua conta.",
         );
+      const address = email(b.email);
       const values = [
         fullName(b.nome),
         b.cpf ? cpf(b.cpf) : null,
         b.nascimento ? date(b.nascimento, "nascimento") : null,
         b.telefone ? text(b.telefone, "telefone", 40) : null,
-        email(b.email),
+        address,
       ];
-      // Voltou do endereço ("Passo Anterior")? Atualiza a conta em andamento
-      // em vez de criar outra (o que daria "Email ou CPF já cadastrado").
-      const current = req.cookies.cashflow_session
-        ? (
-            await db.query(
-              "SELECT u.id FROM sessoes s JOIN usuarios u ON u.id=s.usuario_id WHERE s.token_hash=$1 AND s.expira_em>NOW() AND u.etapa<3",
-              [digest(req.cookies.cashflow_session)],
-            )
-          ).rows[0]
-        : undefined;
-      if (current) {
-        if (b.senha) {
-          strongPassword(b.senha);
-          if (b.senha !== b.confirmar_senha)
-            throw new HttpError(400, "As senhas não coincidem.");
-        }
-        const hash = b.senha ? await bcrypt.hash(b.senha, 12) : null;
-        await userDatabase(db, current.id).query(
-          "UPDATE usuarios SET nome=$1,cpf=$2,nascimento=$3,telefone=$4,email=$5,senha=COALESCE($6,senha) WHERE id=$7",
-          [...values, hash, current.id],
-        );
-        return success({ message: "Dados atualizados!" });
-      }
       const password = strongPassword(b.senha);
-      if (b.senha !== b.confirmar_senha)
+      // Cadastro em um passo: confirmar_senha é opcional (o app mostra a senha).
+      if (b.confirmar_senha !== undefined && b.confirmar_senha !== b.senha)
         throw new HttpError(400, "As senhas não coincidem.");
+      await ensureRealEmail(address);
       const r = await db.query(
-        "INSERT INTO usuarios(nome,cpf,nascimento,telefone,email,senha,etapa,consentimento_em,consentimento_versao) VALUES($1,$2,$3,$4,$5,$6,1,NOW(),'2026-11-v1') RETURNING id",
+        "INSERT INTO usuarios(nome,cpf,nascimento,telefone,email,senha,etapa,consentimento_em,consentimento_versao) VALUES($1,$2,$3,$4,$5,$6,3,NOW(),'2026-11-v1') RETURNING id",
         [...values, await bcrypt.hash(password, 12)],
       );
       await newSession(req, reply, r.rows[0].id);
-      return success({ message: "Etapa 1 concluída!" });
+      // Envio em segundo plano: o cadastro não espera o email chegar.
+      void sendConfirmationFor(r.rows[0].id, address, values[0] as string);
+      return success({
+        message: "Conta criada!",
+        proxima: "/CashFlow_Tela_HomePage/home.html?bemvindo=1",
+      });
     },
   );
   app.post(
@@ -349,6 +405,8 @@ export async function buildApp(
             profile.sub,
             userId,
           ]);
+        // O Google já confirmou que o email é da pessoa.
+        await markEmailConfirmed(userId);
       } else {
         if (![true, "true", "on", "1"].includes(b.consentimento)) {
           reply.code(409);
@@ -361,7 +419,7 @@ export async function buildApp(
           };
         }
         const r = await db.query(
-          "INSERT INTO usuarios(nome,email,google_sub,etapa,consentimento_em,consentimento_versao) VALUES($1,$2,$3,1,NOW(),'2026-11-v1') RETURNING id",
+          "INSERT INTO usuarios(nome,email,google_sub,etapa,consentimento_em,consentimento_versao,preferencias) VALUES($1,$2,$3,3,NOW(),'2026-11-v1',jsonb_build_object('emailConfirmadoEm',to_jsonb(NOW()))) RETURNING id",
           [profile.name.slice(0, 255), profile.email, profile.sub],
         );
         userId = r.rows[0].id;
@@ -373,9 +431,9 @@ export async function buildApp(
           ? "Conta criada com Google!"
           : "Login realizado com sucesso!",
         novo,
-        // Conta nova segue o cadastro normal pelo endereço (etapa 2, opcional).
+        // Conta nova vai direto para o app (endereço e finanças ficam no perfil, opcionais).
         proxima: novo
-          ? "/CashFlow_Tela_de_Cadastro/endereco.html"
+          ? "/CashFlow_Tela_HomePage/home.html?bemvindo=1"
           : "/CashFlow_Tela_HomePage/home.html",
       });
     },
@@ -428,7 +486,9 @@ export async function buildApp(
       [req.userId],
     );
     if (!r.rows[0]) throw new HttpError(404, "Usuário não encontrado.");
-    return success({ dados: r.rows[0] });
+    const dados = r.rows[0];
+    dados.emailConfirmado = Boolean(dados.preferencias?.emailConfirmadoEm);
+    return success({ dados });
   });
   app.post("/api/perfil", async (req) => {
     const b = body(req),
@@ -505,8 +565,36 @@ export async function buildApp(
     }
     if (values.estado && values.estado.length !== 2)
       throw new HttpError(400, "UF inválida.");
+    // A confirmação do email fica em preferencias e não pode ser apagada pelo formulário;
+    // se o email mudar, a confirmação recomeça e um novo link é enviado.
+    const atual = (
+      await userDatabase(db, req.userId!).query(
+        "SELECT email,nome,preferencias FROM usuarios WHERE id=$1",
+        [req.userId],
+      )
+    ).rows[0];
+    const emailMudou =
+      values.email !== undefined &&
+      String(atual?.email ?? "").toLowerCase() !== values.email.toLowerCase();
+    if (emailMudou) await ensureRealEmail(values.email);
+    const confirmado = atual?.preferencias?.emailConfirmadoEm;
+    if (values.preferencias !== undefined || (emailMudou && confirmado)) {
+      const prefs =
+        values.preferencias !== undefined
+          ? JSON.parse(values.preferencias)
+          : { ...(atual?.preferencias ?? {}) };
+      if (confirmado && !emailMudou) prefs.emailConfirmadoEm = confirmado;
+      else delete prefs.emailConfirmadoEm;
+      values.preferencias = JSON.stringify(prefs);
+    }
     await updateUser(req.userId!, values);
-    return success({ message: "Dados atualizados com sucesso!" });
+    if (emailMudou)
+      void sendConfirmationFor(req.userId!, values.email, values.nome ?? atual?.nome);
+    return success({
+      message: emailMudou
+        ? "Dados atualizados! Enviamos um link para confirmar o novo email."
+        : "Dados atualizados com sucesso!",
+    });
   });
   app.get("/api/config/gastos", async (req) => {
     const r = await userDatabase(db, req.userId!).query(
