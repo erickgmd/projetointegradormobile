@@ -9,7 +9,7 @@ import { randomUUID } from "node:crypto";
 
 const person = (email = "erick@example.test") => ({
   nome: "Erick Teste",
-  cpf: "12345678901",
+  cpf: "52998224725",
   nascimento: "2000-01-02",
   telefone: "61999999999",
   email,
