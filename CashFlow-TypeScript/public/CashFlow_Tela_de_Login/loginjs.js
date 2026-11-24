@@ -112,14 +112,20 @@ form.addEventListener('submit', async (e) => {
     const password = passwordInput.value;
 
     hideMessages();
+    emailInput.classList.remove('input-invalid');
+    passwordInput.classList.remove('input-invalid');
 
     if (!email || !password) {
-        showMessage(errorMsg, 'Preencha email e senha.');
+        if (!email) emailInput.classList.add('input-invalid');
+        if (!password) passwordInput.classList.add('input-invalid');
+        showMessage(errorMsg, 'Preencha e-mail e senha.');
+        (email ? passwordInput : emailInput).focus();
         return;
     }
 
     if (!isValidEmail(email)) {
-        showMessage(errorMsg, 'E-mail inválido.');
+        emailInput.classList.add('input-invalid');
+        showMessage(errorMsg, 'E-mail inválido. Confira, por exemplo: nome@gmail.com.');
         emailInput.focus();
         return;
     }
@@ -136,7 +142,7 @@ form.addEventListener('submit', async (e) => {
                 window.location.href = "/CashFlow_Tela_HomePage/home.html";
             }, 600);
         } else {
-            showMessage(errorMsg, result.message || 'Email ou senha inválidos.');
+            showMessage(errorMsg, result.message || 'E-mail ou senha inválidos.');
             passwordInput.focus();
         }
 
@@ -197,7 +203,7 @@ consentCheck.addEventListener('change', () => { if (consentCheck.checked) consen
 
 // Some com a mensagem vermelha assim que a pessoa corrige email ou senha.
 [emailInput, passwordInput].forEach((input) =>
-    input.addEventListener('input', () => { errorMsg.style.display = 'none'; }));
+    input.addEventListener('input', () => { errorMsg.style.display = 'none'; input.classList.remove('input-invalid'); }));
 
 // ===============================
 // 🔹 ANIMAÇÃO INPUT
