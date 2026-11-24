@@ -105,7 +105,7 @@ test("login com Google: cria conta com consentimento, vincula e entra", async (t
   });
   assert.equal(novo.statusCode, 200);
   assert.equal(novo.json().novo, true);
-  assert.match(novo.json().proxima, /endereco/);
+  assert.match(novo.json().proxima, /home\.html\?bemvindo=1/);
   const denovo = await google({ credential: "token-valido" });
   assert.equal(denovo.json().novo, false);
   assert.match(denovo.json().proxima, /home/);
@@ -249,4 +249,91 @@ test("banco antigo com senha NOT NULL: migração 003 libera conta só com Googl
     payload: { credential: "x", consentimento: true },
   });
   assert.equal(r.statusCode, 200);
+});
+
+test("verificação de email: domínio inválido é recusado e o link de confirmação marca a conta", async (t) => {
+  const enviados: { email: string; token: string }[] = [];
+  const { app } = await setup(t, {
+    checkEmail: async (e: string) =>
+      e.endsWith("@naoexiste.test")
+        ? { ok: false, message: "Não encontramos o domínio." }
+        : { ok: true },
+    sendConfirmation: async (email: string, token: string) => {
+      enviados.push({ email, token });
+    },
+  });
+  const recusado = await app.inject({
+    method: "POST",
+    url: "/api/cadastro/etapa1",
+    payload: { ...person, email: "ana@naoexiste.test" },
+  });
+  assert.equal(recusado.statusCode, 400);
+  assert.match(recusado.json().message, /domínio/);
+
+  // Cadastro em um passo: sem confirmar_senha também funciona.
+  const { confirmar_senha: _, ...semConfirmacao } = person;
+  const criado = await app.inject({
+    method: "POST",
+    url: "/api/cadastro/etapa1",
+    payload: semConfirmacao,
+  });
+  assert.equal(criado.statusCode, 200);
+  assert.match(criado.json().proxima, /bemvindo=1/);
+  const cookie = String(criado.headers["set-cookie"]).split(";")[0];
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(enviados.length, 1);
+  assert.equal(enviados[0].email, person.email);
+
+  const perfil = async () =>
+    (await app.inject({ method: "GET", url: "/api/perfil", headers: { cookie } })).json().dados;
+  assert.equal((await perfil()).emailConfirmado, false);
+
+  const invalido = await app.inject({
+    method: "POST",
+    url: "/api/email/confirmar",
+    payload: { token: enviados[0].token + "x" },
+  });
+  assert.equal(invalido.statusCode, 400);
+  const ok = await app.inject({
+    method: "POST",
+    url: "/api/email/confirmar",
+    payload: { token: enviados[0].token },
+  });
+  assert.equal(ok.statusCode, 200);
+  assert.equal((await perfil()).emailConfirmado, true);
+
+  // Salvar preferências no perfil não apaga a confirmação.
+  const prefs = await app.inject({
+    method: "POST",
+    url: "/api/perfil",
+    headers: { cookie },
+    payload: { preferencias: JSON.stringify({ theme: "dark" }) },
+  });
+  assert.equal(prefs.statusCode, 200);
+  assert.equal((await perfil()).emailConfirmado, true);
+
+  // Trocar o email reinicia a confirmação e envia novo link; o link antigo deixa de valer.
+  const troca = await app.inject({
+    method: "POST",
+    url: "/api/perfil",
+    headers: { cookie },
+    payload: { email: "ana.nova@example.test" },
+  });
+  assert.equal(troca.statusCode, 200);
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal((await perfil()).emailConfirmado, false);
+  assert.equal(enviados.length, 2);
+  const antigo = await app.inject({
+    method: "POST",
+    url: "/api/email/confirmar",
+    payload: { token: enviados[0].token },
+  });
+  assert.equal(antigo.statusCode, 400);
+  const reenviar = await app.inject({
+    method: "POST",
+    url: "/api/email/reenviar",
+    headers: { cookie },
+  });
+  assert.equal(reenviar.statusCode, 200);
+  assert.equal(enviados.length, 3);
 });
