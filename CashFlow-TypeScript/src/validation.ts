@@ -35,7 +35,7 @@ export function money(value: unknown, name: string) {
 export function email(value: unknown) {
   const s = text(value, "email", 254).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
-    throw new HttpError(400, "Email inválido.");
+    throw new HttpError(400, "E-mail inválido.");
   return s;
 }
 export function id(value: unknown) {
@@ -64,4 +64,32 @@ export function strongPassword(value: unknown) {
   if (Buffer.byteLength(value) > 72)
     throw new HttpError(400, "A senha pode ter no máximo 72 bytes.");
   return value;
+}
+
+// CPF: 11 dígitos com dígitos verificadores corretos (rejeita 111.111.111-11 etc.).
+export function isValidCpf(value: string) {
+  const d = value.replace(/\D/g, "");
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  for (const size of [9, 10]) {
+    let sum = 0;
+    for (let i = 0; i < size; i++) sum += Number(d[i]) * (size + 1 - i);
+    const check = ((sum * 10) % 11) % 10;
+    if (check !== Number(d[size])) return false;
+  }
+  return true;
+}
+export function cpf(value: unknown) {
+  const s = text(value, "cpf", 20);
+  if (!isValidCpf(s)) throw new HttpError(400, "CPF inválido. Confira os números.");
+  const d = s.replace(/\D/g, "");
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+// Nome completo: nome e sobrenome, só letras (com acento), espaço, hífen e apóstrofo.
+export function fullName(value: unknown) {
+  const s = text(value, "nome", 120).replace(/\s+/g, " ");
+  if (!/^[\p{L}][\p{L}'’.\- ]*$/u.test(s))
+    throw new HttpError(400, "O nome deve ter apenas letras.");
+  if (s.split(" ").filter((p) => p.replace(/[.'’-]/g, "").length >= 2).length < 2)
+    throw new HttpError(400, "Informe nome e sobrenome.");
+  return s;
 }
