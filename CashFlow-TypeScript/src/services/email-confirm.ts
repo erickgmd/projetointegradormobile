@@ -13,7 +13,7 @@ const sign = (payload: string) =>
 
 export function confirmationToken(userId: number, email: string, days = 7) {
   const payload = Buffer.from(
-    JSON.stringify({ u: userId, e: email.toLowerCase(), x: Date.now() + days * 86400000 }),
+    JSON.stringify({ u: Number(userId), e: email.toLowerCase(), x: Date.now() + days * 86400000 }),
   ).toString("base64url");
   return `${payload}.${sign(payload)}`;
 }
@@ -27,9 +27,11 @@ export function readConfirmationToken(token: unknown) {
   if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    if (!Number.isSafeInteger(data.u) || typeof data.e !== "string" || typeof data.x !== "number")
+    // O id pode vir como texto ("2"): o banco devolve alguns ids como string.
+    const userId = Number(data.u);
+    if (!Number.isSafeInteger(userId) || userId <= 0 || typeof data.e !== "string" || typeof data.x !== "number")
       return null;
-    return { userId: data.u as number, email: data.e as string, expired: Date.now() > data.x };
+    return { userId, email: data.e as string, expired: Date.now() > data.x };
   } catch {
     return null;
   }
