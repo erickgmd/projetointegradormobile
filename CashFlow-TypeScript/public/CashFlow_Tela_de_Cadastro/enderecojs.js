@@ -6,6 +6,34 @@ document.addEventListener('DOMContentLoaded', function () {
     const alerta = document.getElementById('enderecoAlerta');
     let ultimoCep = '';
     let controller = null;
+    // Campos preenchidos pela busca do CEP: limpos se o próximo CEP não existir.
+    let preenchidoPeloCep = false;
+    const camposCep = ['logradouro', 'bairro', 'cidade', 'estado'];
+    const limparPreenchidos = () => {
+        if (!preenchidoPeloCep) return;
+        for (const id of camposCep) document.getElementById(id).value = '';
+        preenchidoPeloCep = false;
+    };
+
+    // Só entra aqui quem já criou a conta na etapa 1; os dados salvos voltam preenchidos.
+    fetch('/api/perfil', { credentials: 'include' })
+        .then((r) => {
+            if (r.status === 401) {
+                window.location.replace('/CashFlow_Tela_de_Cadastro/dadospessoais.html');
+                return null;
+            }
+            return r.ok ? r.json() : null;
+        })
+        .then((r) => {
+            const d = r?.dados;
+            if (!d) return;
+            for (const id of ['cep', 'logradouro', 'complemento', 'bairro', 'cidade', 'estado', 'tipo_residencia', 'tempo_residencia']) {
+                const el = form.elements[id] || document.getElementById(id);
+                if (el && d[id] && !el.value) el.value = d[id];
+            }
+            if (d.cep) ultimoCep = String(d.cep).replace(/\D/g, '');
+        })
+        .catch(() => {});
 
     function status(texto, tipo) {
         if (!cepStatus) return;
@@ -28,12 +56,14 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('bairro').value = data.bairro || '';
             document.getElementById('cidade').value = data.localidade || '';
             document.getElementById('estado').value = data.uf || '';
-            status('Endereço encontrado. Confira e complete o número/complemento.', 'ok');
+            preenchidoPeloCep = true;
+            status('Endereço encontrado. Confira e informe o número e o complemento.', 'ok');
             if (!data.logradouro) document.getElementById('logradouro').focus();
-            else document.getElementById('complemento').focus();
+            else document.getElementById('numero').focus();
         } catch (error) {
             if (error.name === 'AbortError') return;
             ultimoCep = '';
+            limparPreenchidos();
             if (error instanceof TypeError)
                 status('Sem conexão para consultar o CEP agora. Preencha o endereço manualmente.', 'error');
             else
@@ -73,6 +103,11 @@ document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', function (e) {
         e.preventDefault();
         const formData = new FormData(form);
+        // Sem coluna própria no banco: o número vai junto do logradouro ("Rua X, 123").
+        const numero = document.getElementById('numero').value.trim();
+        const logradouro = String(formData.get('logradouro') || '').trim();
+        if (numero && logradouro) formData.set('logradouro', `${logradouro}, ${numero}`);
+        else if (numero) formData.set('complemento', [`Nº ${numero}`, formData.get('complemento')].filter(Boolean).join(' - '));
         fetch("/api/cadastro/etapa2", {
             method: "POST",
             credentials: "include",
