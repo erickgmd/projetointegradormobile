@@ -24,6 +24,8 @@ import {
   email,
   id,
   strongPassword,
+  cpf,
+  fullName,
 } from "./validation.js";
 import type { GoogleVerifier } from "./integrations/google.js";
 import type { FastifyReply, FastifyRequest } from "fastify";
@@ -121,7 +123,7 @@ export async function buildApp(
             ? "Já existe uma categoria com esse nome e tipo."
             : String(err.constraint ?? "").includes("telegram")
               ? "Esse Telegram já está vinculado a outra conta."
-              : "Email ou CPF já cadastrado."
+              : "E-mail ou CPF já cadastrado."
           : status >= 500
             ? "Não foi possível concluir agora. Tente novamente; se persistir, contate o suporte."
             : // Erros do banco (campo obrigatório, tamanho, regra) sem detalhes técnicos.
@@ -243,21 +245,44 @@ export async function buildApp(
       if (![true, "true", "on", "1"].includes(b.consentimento))
         throw new HttpError(
           400,
-          "Leia e aceite o aviso de privacidade para criar sua conta.",
+          "Leia e aceite os Termos de Uso e a Política de Privacidade para criar sua conta.",
         );
+      const values = [
+        fullName(b.nome),
+        b.cpf ? cpf(b.cpf) : null,
+        b.nascimento ? date(b.nascimento, "nascimento") : null,
+        b.telefone ? text(b.telefone, "telefone", 40) : null,
+        email(b.email),
+      ];
+      // Voltou do endereço ("Passo Anterior")? Atualiza a conta em andamento
+      // em vez de criar outra (o que daria "Email ou CPF já cadastrado").
+      const current = req.cookies.cashflow_session
+        ? (
+            await db.query(
+              "SELECT u.id FROM sessoes s JOIN usuarios u ON u.id=s.usuario_id WHERE s.token_hash=$1 AND s.expira_em>NOW() AND u.etapa<3",
+              [digest(req.cookies.cashflow_session)],
+            )
+          ).rows[0]
+        : undefined;
+      if (current) {
+        if (b.senha) {
+          strongPassword(b.senha);
+          if (b.senha !== b.confirmar_senha)
+            throw new HttpError(400, "As senhas não coincidem.");
+        }
+        const hash = b.senha ? await bcrypt.hash(b.senha, 12) : null;
+        await userDatabase(db, current.id).query(
+          "UPDATE usuarios SET nome=$1,cpf=$2,nascimento=$3,telefone=$4,email=$5,senha=COALESCE($6,senha) WHERE id=$7",
+          [...values, hash, current.id],
+        );
+        return success({ message: "Dados atualizados!" });
+      }
       const password = strongPassword(b.senha);
       if (b.senha !== b.confirmar_senha)
         throw new HttpError(400, "As senhas não coincidem.");
       const r = await db.query(
         "INSERT INTO usuarios(nome,cpf,nascimento,telefone,email,senha,etapa,consentimento_em,consentimento_versao) VALUES($1,$2,$3,$4,$5,$6,1,NOW(),'2026-11-v1') RETURNING id",
-        [
-          text(b.nome, "nome"),
-          b.cpf ? text(b.cpf, "cpf", 20) : null,
-          b.nascimento ? date(b.nascimento, "nascimento") : null,
-          b.telefone ? text(b.telefone, "telefone", 40) : null,
-          email(b.email),
-          await bcrypt.hash(password, 12),
-        ],
+        [...values, await bcrypt.hash(password, 12)],
       );
       await newSession(req, reply, r.rows[0].id);
       return success({ message: "Etapa 1 concluída!" });
@@ -282,7 +307,7 @@ export async function buildApp(
         hash ?? "$2b$12$C6UzMDM.H6dfI/f/IKcEe.5Pj5eKKxfamc4O2JXXiZpaAKw1nwS7e",
       );
       if (!user || !valid)
-        throw new HttpError(401, "Email ou senha inválidos.");
+        throw new HttpError(401, "E-mail ou senha inválidos.");
       await newSession(req, reply, user.id, remembered(b.lembrar));
       return success({
         lembrar: remembered(b.lembrar),
@@ -390,11 +415,16 @@ export async function buildApp(
         : null,
       etapa: 3,
     });
+    // Com data de nascimento informada, "menor de 18" vem dela (não da caixa).
+    await userDatabase(db, req.userId!).query(
+      "UPDATE usuarios SET menor_18=(nascimento>CURRENT_DATE-INTERVAL '18 years') WHERE id=$1 AND nascimento IS NOT NULL",
+      [req.userId],
+    );
     return success({ message: "Cadastro concluído!" });
   });
   app.get("/api/perfil", async (req) => {
     const r = await userDatabase(db, req.userId!).query(
-      `SELECT ${profileFields.map((k) => (k === "nascimento" ? "to_char(nascimento,'YYYY-MM-DD') AS nascimento" : k)).join(",")} FROM usuarios WHERE id=$1`,
+      `SELECT ${profileFields.map((k) => (k === "nascimento" ? "to_char(nascimento,'YYYY-MM-DD') AS nascimento" : k)).join(",")},etapa FROM usuarios WHERE id=$1`,
       [req.userId],
     );
     if (!r.rows[0]) throw new HttpError(404, "Usuário não encontrado.");
@@ -453,7 +483,11 @@ export async function buildApp(
       else if (key === "email") values[key] = email(b[key]);
       else if (key === "nascimento")
         values[key] = b[key] ? date(b[key], key) : null;
-      else if (key === "nome") values[key] = text(b[key], key);
+      else if (key === "nome") {
+        values[key] = text(b[key], key, 120).replace(/\s+/g, " ");
+        if (/\d/.test(values[key]))
+          throw new HttpError(400, "O nome deve ter apenas letras.");
+      } else if (key === "cpf") values[key] = b[key] ? cpf(b[key]) : "";
       else {
         if (
           typeof b[key] !== "string" ||

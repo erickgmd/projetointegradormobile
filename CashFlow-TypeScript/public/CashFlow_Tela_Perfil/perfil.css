@@ -935,3 +935,8 @@ body.theme-dark .account-consent-ok small { color: #bbf7d0; }
 /* Campos no tema escuro: continuam escuros ao digitar */
 body.theme-dark input:focus,
 body.theme-dark select:focus { background: #020617 !important; color: #f8fafc !important; }
+
+/* Mensagem de salvar o perfil (no lugar das janelas de alerta). */
+.perfil-status { margin: 12px 0; padding: 10px 14px; border-radius: 10px; font-weight: 600; }
+.perfil-status.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.perfil-status.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }

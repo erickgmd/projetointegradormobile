@@ -253,3 +253,4 @@ body.auth-page {
     box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.2);
   }
 }
+.form-hint { font-size: 13px; line-height: 1.5; color: #475569; margin: 12px 0 4px; }

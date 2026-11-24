@@ -5,8 +5,9 @@
   const $ = (id) => document.getElementById(id);
   const form = document.querySelector("form");
   const alerta = $("cadastroAlerta");
-  const termos1 = $("termos1");
   const termos2 = $("termos2");
+  // Voltou do endereço com a conta já criada: os dados são atualizados e a senha é opcional.
+  let returning = false;
   const DRAFT_KEY = "cashflow-cadastro-rascunho";
   const draftFields = ["nome", "cpf", "nascimento", "telefone", "email"];
 
@@ -35,12 +36,11 @@
   try {
     const draft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || "{}");
     for (const id of draftFields) if (draft[id] && !$(id).value) $(id).value = draft[id];
-    if (draft.termos1) termos1.checked = true;
     if (draft.termos2) termos2.checked = true;
   } catch { /* sem armazenamento */ }
   const saveDraft = () => {
     try {
-      const draft = { termos1: termos1.checked, termos2: termos2.checked };
+      const draft = { termos2: termos2.checked };
       for (const id of draftFields) draft[id] = $(id).value;
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     } catch { /* sem armazenamento */ }
@@ -73,15 +73,11 @@
   function showAlert(type, message) {
     alerta.className = `form-alert show ${type}`;
     alerta.textContent = message;
-    alerta.scrollIntoView({ behavior: "smooth", block: "center" });
+    alerta.scrollIntoView?.({ behavior: "smooth", block: "center" });
   }
 
   function termsOk() {
     let ok = true;
-    if (!termos1.checked) {
-      fieldError(termos1, "Marque esta caixa para confirmar que leu o aviso de segurança e LGPD.");
-      ok = false;
-    }
     if (!termos2.checked) {
       fieldError(termos2, "Você deve aceitar os Termos de Uso e a Política de Privacidade para continuar.");
       ok = false;
@@ -89,13 +85,45 @@
     return ok;
   }
 
-  [termos1, termos2].forEach((box) =>
-    box.addEventListener("change", () => {
-      const next = box.closest(".checkbox-container").nextElementSibling;
-      if (box.checked && next?.classList.contains("field-error")) next.remove();
-      if (termos1.checked && termos2.checked && pendingGoogle) submitGoogle(pendingGoogle);
-    }),
-  );
+  termos2.addEventListener("change", () => {
+    const next = termos2.closest(".checkbox-container").nextElementSibling;
+    if (termos2.checked && next?.classList.contains("field-error")) next.remove();
+    if (termos2.checked && pendingGoogle) submitGoogle(pendingGoogle);
+  });
+
+  // ---------- Validações de nome e CPF ----------
+  function cpfValido(valor) {
+    const d = valor.replace(/\D/g, "");
+    if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+    for (const size of [9, 10]) {
+      let soma = 0;
+      for (let i = 0; i < size; i++) soma += Number(d[i]) * (size + 1 - i);
+      if (((soma * 10) % 11) % 10 !== Number(d[size])) return false;
+    }
+    return true;
+  }
+  function erroNome(nome) {
+    if (!nome) return "Informe seu nome completo.";
+    if (!/^[\p{L}][\p{L}'’.\- ]*$/u.test(nome)) return "O nome deve ter apenas letras.";
+    if (nome.split(/\s+/).filter((p) => p.replace(/[.'’-]/g, "").length >= 2).length < 2)
+      return "Informe nome e sobrenome.";
+    return "";
+  }
+
+  // ---------- Voltou da etapa 2: carrega os dados já salvos ----------
+  fetch("/api/perfil", { credentials: "include" })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((r) => {
+      const d = r?.dados;
+      if (!d || Number(d.etapa) >= 3) return;
+      returning = true;
+      for (const id of draftFields) if (d[id]) $(id).value = d[id];
+      termos2.checked = true;
+      $("senha").placeholder = "Deixe em branco para manter a senha";
+      $("confirmar-senha").placeholder = "Deixe em branco para manter a senha";
+      showAlert("info", "Sua conta já foi criada. Corrija o que precisar e siga para o próximo passo.");
+    })
+    .catch(() => {});
 
   // ---------- Envio do formulário ----------
   form.addEventListener("submit", async (e) => {
@@ -112,13 +140,15 @@
     const senha = $("senha").value;
     const confirmar = $("confirmar-senha").value;
 
-    if (!nome) fail($("nome"), "Informe seu nome completo.");
-    if (!email) fail($("email"), "Informe seu email.");
+    const nomeErro = erroNome(nome);
+    if (nomeErro) fail($("nome"), nomeErro);
+    if (!email) fail($("email"), "Informe seu e-mail.");
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       fail($("email"), "Digite um email válido, por exemplo nome@gmail.com.");
 
     const cpf = $("cpf").value.replace(/\D/g, "");
     if (cpf && cpf.length !== 11) fail($("cpf"), "O CPF precisa ter 11 números.");
+    else if (cpf && !cpfValido(cpf)) fail($("cpf"), "CPF inválido. Confira os números.");
 
     const nascimento = $("nascimento").value;
     if (nascimento) {
@@ -128,11 +158,14 @@
     }
 
     const forca = CashFlowAuth.checkPassword(senha);
-    if (!senha) fail($("senha"), "Crie uma senha.");
-    else if (!forca.ok)
-      fail($("senha"), "Senha fraca: falta " + forca.missing.map((r) => r.label.toLowerCase()).join(", ") + ".");
-    if (!confirmar) fail($("confirmar-senha"), "Repita a senha.");
-    else if (senha !== confirmar) fail($("confirmar-senha"), "As senhas não coincidem.");
+    const senhaOpcional = returning && !senha && !confirmar;
+    if (!senhaOpcional) {
+      if (!senha) fail($("senha"), "Crie uma senha.");
+      else if (!forca.ok)
+        fail($("senha"), "Senha fraca: falta " + forca.missing.map((r) => r.label.toLowerCase()).join(", ") + ".");
+      if (!confirmar) fail($("confirmar-senha"), "Repita a senha.");
+      else if (senha !== confirmar) fail($("confirmar-senha"), "As senhas não coincidem.");
+    }
 
     if (!termsOk()) firstInvalid ||= form.querySelector(".field-error");
 
@@ -143,7 +176,7 @@
 
     const button = form.querySelector('button[type="submit"]');
     button.disabled = true;
-    button.textContent = "Criando conta...";
+    button.textContent = returning ? "Salvando..." : "Criando conta...";
     try {
       const response = await fetch("/api/cadastro/etapa1", {
         method: "POST",
@@ -182,8 +215,8 @@
     clearErrors();
     if (!termsOk()) {
       pendingGoogle = credential;
-      showAlert("info", "Conta Google confirmada. Agora marque os dois termos no final da página para concluir.");
-      termos1.closest(".checkbox-container").scrollIntoView({ behavior: "smooth", block: "center" });
+      showAlert("info", "Conta Google confirmada. Agora marque a caixa dos Termos de Uso no final da página para concluir.");
+      termos2.closest(".checkbox-container").scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     pendingGoogle = null;

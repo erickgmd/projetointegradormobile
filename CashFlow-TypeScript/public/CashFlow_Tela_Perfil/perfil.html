@@ -32,7 +32,6 @@
             <a class="user-name" id="userName">Usuário</a>
             <hr>
             <a href="../CashFlow_Tela_HomePage/home.html" id="editProfileBtn">🏠 Home</a>
-            <a href="../CashFlow_Tela_Config/config.html" id="settingsBtn">⚙️ Configurações</a>
             <a href="#" id="btnTelegram"><img src="../image.png" class="imgTelegram" alt="">Código</a>
 
 
@@ -63,13 +62,13 @@
                 <input type="text" name="nome" required>
             </label>
             <label>CPF (opcional):
-                <input type="text" name="cpf">
+                <input type="text" name="cpf" id="perfilCpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric">
             </label>
             <label>Data de nascimento (opcional):
                 <input type="date" name="nascimento">
             </label>
             <label>Telefone celular (opcional):
-                <input type="tel" name="telefone">
+                <input type="tel" name="telefone" id="perfilTelefone" placeholder="(00) 00000-0000" maxlength="15" inputmode="tel">
             </label>
             <label>Email:
                 <input type="email" name="email" required>
@@ -79,10 +78,10 @@
         <fieldset>
             <legend>Endereço</legend>
             <label>CEP (opcional):
-                <input type="text" name="cep">
+                <input type="text" name="cep" placeholder="00000-000" maxlength="9" inputmode="numeric">
             </label>
             <label>Logradouro (opcional):
-                <input type="text" name="logradouro">
+                <input type="text" name="logradouro" placeholder="Rua, avenida ou quadra, com o número">
             </label>
             <label>Complemento (opcional):
                 <input type="text" name="complemento">
@@ -96,11 +95,33 @@
             <label>Estado (opcional):
                 <select name="estado">
                     <option value="">Selecione</option>
-                    <option value="DF">DF</option>
-                    <option value="SP">SP</option>
-                    <option value="RJ">RJ</option>
-                    <option value="MG">MG</option>
-                    <!-- Adicione outros estados -->
+                    <option value="AC">Acre</option>
+                    <option value="AL">Alagoas</option>
+                    <option value="AP">Amapá</option>
+                    <option value="AM">Amazonas</option>
+                    <option value="BA">Bahia</option>
+                    <option value="CE">Ceará</option>
+                    <option value="DF">Distrito Federal</option>
+                    <option value="ES">Espírito Santo</option>
+                    <option value="GO">Goiás</option>
+                    <option value="MA">Maranhão</option>
+                    <option value="MT">Mato Grosso</option>
+                    <option value="MS">Mato Grosso do Sul</option>
+                    <option value="MG">Minas Gerais</option>
+                    <option value="PA">Pará</option>
+                    <option value="PB">Paraíba</option>
+                    <option value="PR">Paraná</option>
+                    <option value="PE">Pernambuco</option>
+                    <option value="PI">Piauí</option>
+                    <option value="RJ">Rio de Janeiro</option>
+                    <option value="RN">Rio Grande do Norte</option>
+                    <option value="RS">Rio Grande do Sul</option>
+                    <option value="RO">Rondônia</option>
+                    <option value="RR">Roraima</option>
+                    <option value="SC">Santa Catarina</option>
+                    <option value="SP">São Paulo</option>
+                    <option value="SE">Sergipe</option>
+                    <option value="TO">Tocantins</option>
                 </select>
             </label>
             <label>Tipo de residência (opcional):
@@ -115,7 +136,15 @@
                 </select>
             </label>
             <label>Tempo de residência (opcional):
-                <input type="text" name="tempo_residencia">
+                <select name="tempo_residencia">
+                    <option value="">Selecione</option>
+                    <option value="menos-6-meses">Menos de 6 meses</option>
+                    <option value="6-meses-1-ano">6 meses a 1 ano</option>
+                    <option value="1-2-anos">1 a 2 anos</option>
+                    <option value="2-5-anos">2 a 5 anos</option>
+                    <option value="5-10-anos">5 a 10 anos</option>
+                    <option value="mais-10-anos">Mais de 10 anos</option>
+                </select>
             </label>
         </fieldset>
 
@@ -154,6 +183,7 @@
             </label>
         </fieldset>
 
+        <p class="perfil-status" id="perfilStatus" role="status" aria-live="polite" hidden></p>
         <button type="submit">Salvar Informações</button>
     </form>
 </div>

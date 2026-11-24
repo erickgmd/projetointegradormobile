@@ -5,7 +5,7 @@ import { buildApp } from "../src/app.js";
 import { userDatabase } from "../src/db.js";
 const person = (email = "rf@test.com") => ({
   nome: "Usuário Teste",
-  cpf: "12345678901",
+  cpf: "52998224725",
   nascimento: "2000-01-01",
   telefone: "61999999999",
   email,

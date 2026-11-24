@@ -52,7 +52,12 @@
   CashFlowAuth.attachPasswordToggle(confirmar);
   CashFlowAuth.attachStrengthMeter(senha);
   function alerta(tipo, texto) { status.className = "form-alert show " + tipo; status.innerHTML = texto; }
-  if (!token) alerta("error", 'Este link está incompleto. <a href="/recuperar-senha.html">Peça um novo link</a>.');
+  if (!token) {
+    alerta("error", 'Este link está incompleto. <a href="/recuperar-senha.html">Peça um novo link</a>.');
+    // Sem o link do email não há como salvar: o formulário fica desativado.
+    form.querySelectorAll("input,button").forEach(function (el) { el.disabled = true; });
+    return;
+  }
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     erro.hidden = true; confirmar.classList.remove("input-invalid"); senha.classList.remove("input-invalid");

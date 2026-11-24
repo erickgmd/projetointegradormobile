@@ -72,7 +72,6 @@
                                 <a class="user-name" id="userName"></a>
                             </div>
                             <hr>
-                            <a href="../CashFlow_Tela_Config/config.html" id="settingsBtn">⚙️ Configurações</a>
                             <a href="../CashFlow_Tela_Perfil/perfil.html" id="editProfileBtn">📝 Editar Perfil</a>
                             <a href="../CashFlow_Tela_de_Login/login.html" id="logoutBtn" class="logout">🚪 Logout</a>
                         </div>
@@ -125,7 +124,7 @@
                                 <span class="card-icon">💰</span>
                             </div>
                             <p class="balance-total">R$ 0,00</p>
-                            <small>Resultado acumulado</small>
+                            <small class="summary-period">Todo o período</small>
                         </div>
                         <div class="card metric-card income-card">
                             <div class="card-top">
@@ -133,7 +132,7 @@
                                 <span class="card-icon">📈</span>
                             </div>
                             <p class="income-total">R$ 0,00</p>
-                            <small>Entradas registradas</small>
+                            <small class="summary-period">Todo o período</small>
                         </div>
 
                         <div class="card metric-card expense-card">
@@ -142,7 +141,7 @@
                                 <span class="card-icon">📉</span>
                             </div>
                             <p class="expense-total">R$ 0,00</p>
-                            <small>Saídas registradas</small>
+                            <small class="summary-period">Todo o período</small>
                         </div>
                     </div>
                 </section>
@@ -176,6 +175,15 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="type">Tipo</label>
+                            <select id="type" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="income">Receita</option>
+                                <option value="expense">Despesa</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
                             <label for="category">Categoria</label>
                             <select id="category" required>
                                 <option value="">Selecione uma categoria</option>
@@ -183,7 +191,7 @@
                                     <option value="salario">Salário</option>
                                     <option value="freelance">Freelance</option>
                                     <option value="investimentos">Investimentos</option>
-                                    <option value="outros-receitas">Outros</option>
+                                    <option value="outros-receitas">Outras receitas</option>
                                 </optgroup>
                                 <optgroup label="Despesas">
                                     <option value="alimentacao">Alimentação</option>
@@ -192,17 +200,8 @@
                                     <option value="saude">Saúde</option>
                                     <option value="educacao">Educação</option>
                                     <option value="lazer">Lazer</option>
-                                    <option value="outros-despesas">Outros</option>
+                                    <option value="outros-despesas">Outras despesas</option>
                                 </optgroup>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="type">Tipo</label>
-                            <select id="type" required>
-                                <option value="">Selecione o tipo</option>
-                                <option value="income">Receita</option>
-                                <option value="expense">Despesa</option>
                             </select>
                         </div>
 
@@ -236,10 +235,6 @@
                                 </select>
                             </div>
 
-                            <div class="filter-group filter-action">
-                                <label>&nbsp;</label>
-                                <button id="clearAll" class="btn-danger" type="button">Limpar Tudo</button>
-                            </div>
                         </div>
                     </div>
 
@@ -248,6 +243,10 @@
                             <p>📊 Nenhuma transação encontrada</p>
                             <p>Adicione sua primeira transação acima para começar.</p>
                         </div>
+                    </div>
+
+                    <div class="danger-zone">
+                        <button id="clearAll" class="btn-danger-outline" type="button">🗑 Excluir todas as transações</button>
                     </div>
                 </section>
 
@@ -437,8 +436,8 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="exchangeRate">Taxa de Câmbio</label>
-                                <input type="number" id="exchangeRate" step="0.0001" placeholder="5.50">
+                                <label for="exchangeRate" id="exchangeRateLabel">Cotação (quantos reais vale 1 unidade da moeda estrangeira)</label>
+                                <input type="number" id="exchangeRate" step="0.0001" min="0" placeholder="Ex.: 5,50 (1 USD = R$ 5,50)">
                             </div>
 
                             <button class="btn-primary" onclick="financeManager.convertCurrency()">Converter</button>
@@ -620,9 +619,11 @@
             <div class="cashbot-shortcuts-title">Perguntas rápidas</div>
 
             <div class="cashbot-shortcuts">
+                <button type="button" class="cashbot-question" data-question="Quanto gastei este mês?">Quanto gastei?</button>
+                <button type="button" class="cashbot-question" data-question="Qual meu saldo este mês?">Meu saldo</button>
                 <button type="button" class="cashbot-question" data-question="Como cadastrar uma transação?">Cadastrar transação</button>
                 <button type="button" class="cashbot-question" data-question="Como excluir uma transação?">Excluir transação</button>
-                <button type="button" class="cashbot-question" data-question="Como limpar todas as transações?">Limpar tudo</button>
+                <button type="button" class="cashbot-question" data-question="Como excluir todas as transações?">Excluir todas</button>
                 <button type="button" class="cashbot-question" data-question="Como filtrar por mês ou tipo?">Filtrar</button>
                 <button type="button" class="cashbot-question" data-question="Como gerar relatório financeiro?">Gerar relatório</button>
                 <button type="button" class="cashbot-question" data-question="Como mudar tema e contraste?">Tema/contraste</button>

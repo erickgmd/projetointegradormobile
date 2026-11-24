@@ -2966,3 +2966,77 @@ body.theme-dark .bcb-filters input[type="month"] { color-scheme: dark; }
     .bcb-filters .bcb-search { order: 0; }
     .tool-card > .btn-primary, .tool-card > button { width: 100%; }
 }
+
+/* ===== Ajustes de usabilidade (nov/2026) ===== */
+/* Saldo negativo sempre em vermelho, inclusive no tema escuro. */
+.balance-total.is-negative,
+body.theme-dark .balance-total.is-negative,
+body.dark-theme .balance-total.is-negative,
+[data-theme="dark"] .balance-total.is-negative {
+    color: #ef4444 !important;
+}
+
+/* Excluir todas: longe dos filtros, com cara de ação perigosa. */
+.danger-zone {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(148, 163, 184, 0.35);
+}
+.btn-danger-outline {
+    background: transparent;
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.55);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-danger-outline:hover { background: rgba(220, 38, 38, 0.08); }
+body.theme-dark .btn-danger-outline,
+[data-theme="dark"] .btn-danger-outline { color: #f87171; border-color: rgba(248, 113, 113, 0.6); }
+
+.confirm-dialog {
+    border: none;
+    border-radius: 16px;
+    padding: 0;
+    max-width: min(420px, calc(100vw - 32px));
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+}
+.confirm-dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
+.confirm-sheet { display: grid; gap: 12px; padding: 22px; color: #0f172a; background: #ffffff; }
+.confirm-sheet h3 { margin: 0; font-size: 1.15rem; color: #b91c1c; }
+.confirm-sheet p { margin: 0; color: #334155; line-height: 1.5; }
+.confirm-sheet input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.confirm-actions .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Erro das calculadoras dentro do próprio card. */
+.tool-error {
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(220, 38, 38, 0.1);
+    color: #b91c1c;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+body.theme-dark .tool-error,
+[data-theme="dark"] .tool-error { color: #fca5a5; }
+
+/* CashBot: depois da primeira pergunta, a conversa ocupa o espaço dos atalhos. */
+.cashbot-chatting .cashbot-welcome,
+.cashbot-chatting .cashbot-shortcuts-title,
+.cashbot-chatting .cashbot-shortcuts {
+    display: none !important;
+}
+.cashbot-chatting .cashbot-messages {
+    height: 360px !important;
+    max-height: 55vh !important;
+}
+
+/* Celular: espaço no fim da página para os botões flutuantes (💬 e 🎨) não cobrirem conteúdo. */
+@media (max-width: 768px) {
+    .tab-content.active { padding-bottom: 96px; }
+}
