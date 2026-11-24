@@ -36,7 +36,60 @@ export function resetEmail(link: string) {
   };
 }
 
+// "Nome <email@dominio>" -> { name, email } (formato exigido pela API do Brevo).
+const parseSender = (from: string) => {
+  const m = from.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/);
+  return m
+    ? { name: m[1].trim() || "CashFlow", email: m[2].trim() }
+    : { name: "CashFlow", email: from.trim() };
+};
+
+// Envio pela API HTTPS do Brevo (porta 443). Usado quando BREVO_API_KEY existe,
+// pois o plano gratuito do Render bloqueia as portas SMTP (25, 465 e 587).
+function brevoSender(apiKey: string, from: string) {
+  const sender = parseSender(from);
+  console.log("[CashFlow] Emails de recuperação via API do Brevo.");
+  return async (address: string, token: string) => {
+    const message = resetEmail(resetLink(token));
+    try {
+      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": apiKey,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          sender,
+          to: [{ email: address }],
+          subject: message.subject,
+          htmlContent: message.html,
+          textContent: message.text,
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!response.ok)
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    } catch (error) {
+      console.error(
+        "Falha ao enviar recuperação pelo Brevo. Confira BREVO_API_KEY e o remetente verificado.",
+        (error as Error)?.message,
+      );
+      throw new Error("Falha no envio de email.");
+    }
+  };
+}
+
 export function resetSender() {
+  const brevoKey = process.env.BREVO_API_KEY?.trim();
+  if (brevoKey) {
+    const from = process.env.MAIL_FROM || process.env.SMTP_FROM;
+    if (!from)
+      console.error(
+        "[CashFlow] BREVO_API_KEY configurada, mas falta MAIL_FROM (remetente verificado no Brevo).",
+      );
+    else return brevoSender(brevoKey, from);
+  }
   if (!process.env.SMTP_HOST || !process.env.SMTP_FROM) {
     // Desenvolvimento sem SMTP: o link aparece no terminal do servidor para testes.
     if (process.env.NODE_ENV !== "production")
