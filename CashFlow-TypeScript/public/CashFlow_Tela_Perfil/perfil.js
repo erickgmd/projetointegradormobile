@@ -149,6 +149,25 @@ function brToDecimal(str) {
 function setupForm() {
     const form = document.querySelector(".profile-form");
     if (!form) return;
+    const statusEl = document.getElementById("perfilStatus");
+    const mostrarStatus = (tipo, texto) => {
+        if (!statusEl) return;
+        statusEl.className = `perfil-status ${tipo}`;
+        statusEl.textContent = texto;
+        statusEl.hidden = false;
+        statusEl.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    };
+
+    // Máscaras de CPF e telefone, iguais às do cadastro.
+    form.elements.cpf?.addEventListener("input", (e) => {
+        let v = e.target.value.replace(/\D/g, "").slice(0, 11);
+        v = v.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        e.target.value = v;
+    });
+    form.elements.telefone?.addEventListener("input", (e) => {
+        let v = e.target.value.replace(/\D/g, "").slice(0, 11);
+        e.target.value = v.replace(/^(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
+    });
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -175,7 +194,7 @@ function setupForm() {
             const result = await response.json();
 
             if (result.status === "success") {
-                alert("Dados atualizados!");
+                mostrarStatus("success", "✓ Dados atualizados!");
                 await carregarPerfil();
                 const saved = JSON.parse(formData.get('preferencias'));
                 window.cashflowPreferences = saved;
@@ -186,12 +205,12 @@ function setupForm() {
 
                 if (userName) userName.textContent = novoNome;
             } else {
-                alert(result.message + (result.debug ? "\n\nDebug: " + result.debug : ""));
+                mostrarStatus("error", result.message || "Não foi possível salvar. Confira os campos.");
             }
 
         } catch (err) {
             console.error(err);
-            alert("Erro ao salvar");
+            mostrarStatus("error", "Sem conexão com o servidor. Tente novamente.");
         }
     });
 }
