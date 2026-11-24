@@ -5,7 +5,7 @@ test("repro", async () => {
   const { pg, db } = await testDatabase();
   const app = await buildApp(db, { logger: false });
   const fd = new FormData();
-  for (const [k, v] of Object.entries({ consentimento: "true", nome: "José Ação D'Ávila", cpf: "123.456.789-01", nascimento: "", telefone: "(61) 99999-9999", email: "jose@example.test", senha: "S3nh@#$%&*!çã", confirmar_senha: "S3nh@#$%&*!çã" })) fd.append(k, v);
+  for (const [k, v] of Object.entries({ consentimento: "true", nome: "José Ação D'Ávila", cpf: "529.982.247-25", nascimento: "", telefone: "(61) 99999-9999", email: "jose@example.test", senha: "S3nh@#$%&*!çã", confirmar_senha: "S3nh@#$%&*!çã" })) fd.append(k, v);
   const req = new Request("http://x", { method: "POST", body: fd });
   const r = await app.inject({ method: "POST", url: "/api/cadastro/etapa1", headers: Object.fromEntries(req.headers), payload: Buffer.from(await req.arrayBuffer()) });
   console.log(r.statusCode, r.body);
