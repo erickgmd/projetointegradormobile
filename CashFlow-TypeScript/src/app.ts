@@ -262,8 +262,9 @@ export async function buildApp(
       return false;
     }
   };
-  const markEmailConfirmed = (userId: number) =>
-    userDatabase(db, userId).query(
+  // O banco pode devolver o id como texto ("2"); userDatabase exige número.
+  const markEmailConfirmed = (userId: number | string) =>
+    userDatabase(db, Number(userId)).query(
       "UPDATE usuarios SET preferencias=COALESCE(preferencias,'{}'::jsonb)||jsonb_build_object('emailConfirmadoEm',to_jsonb(NOW())) WHERE id=$1 AND NOT (COALESCE(preferencias,'{}'::jsonb) ? 'emailConfirmadoEm')",
       [userId],
     );
