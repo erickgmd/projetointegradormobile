@@ -43,7 +43,7 @@ test("tela inicial usa API para carregar, adicionar e remover transações", asy
     url: "/api/cadastro/etapa1",
     payload: {
       nome: "Erick Teste",
-      cpf: "12345678901",
+      cpf: "52998224725",
       nascimento: "2000-01-02",
       telefone: "61999999999",
       email: "ui@test.com",
