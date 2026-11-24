@@ -17,6 +17,12 @@ import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import type { Database } from "./db.js";
 import {
+  confirmEmail,
+  sendVerification,
+  verificationResponse,
+  type VerificationSender,
+} from "./services/email-verification.js";
+import {
   HttpError,
   text,
   date,
@@ -67,8 +73,12 @@ export async function buildApp(
     // Login com Google: Client ID Web público e verificador do ID token.
     googleClientId?: string;
     verifyGoogle?: GoogleVerifier;
+    requireEmailVerification?: boolean;
+    sendVerification?: VerificationSender;
   } = {},
 ) {
+  const requireEmailVerification =
+    options.requireEmailVerification ?? options.production ?? false;
   const app = Fastify({
     logger: options.logger
       ? {
@@ -174,6 +184,8 @@ export async function buildApp(
         "/api/senha/recuperar",
         "/api/senha/redefinir",
         "/api/telegram/webhook",
+        "/api/email/confirmar",
+        "/api/email/reenviar",
       ].includes(path)
     )
       return;
@@ -186,6 +198,17 @@ export async function buildApp(
     if (!result.rows[0])
       throw new HttpError(401, "Sessão expirada. Faça login novamente.");
     req.userId = result.rows[0].usuario_id;
+    if (requireEmailVerification) {
+      const pending = await db.query(
+        "SELECT id FROM usuarios WHERE id=$1 AND email_verificacao_obrigatoria=TRUE AND email_confirmado_em IS NULL",
+        [req.userId],
+      );
+      if (pending.rows.length)
+        throw new HttpError(
+          403,
+          "Confirme seu e-mail antes de acessar a conta.",
+        );
+    }
   });
   const body = (req: FastifyRequest): Record<string, any> => {
     if (!req.body || typeof req.body !== "object" || Array.isArray(req.body))
@@ -248,8 +271,13 @@ export async function buildApp(
       const password = strongPassword(b.senha);
       if (b.senha !== b.confirmar_senha)
         throw new HttpError(400, "As senhas não coincidem.");
+      if (requireEmailVerification && !options.sendVerification)
+        throw new HttpError(
+          503,
+          "O envio de confirmação de e-mail está indisponível. Tente novamente mais tarde.",
+        );
       const r = await db.query(
-        "INSERT INTO usuarios(nome,cpf,nascimento,telefone,email,senha,etapa,consentimento_em,consentimento_versao) VALUES($1,$2,$3,$4,$5,$6,1,NOW(),'2026-11-v1') RETURNING id",
+        "INSERT INTO usuarios(nome,cpf,nascimento,telefone,email,senha,etapa,consentimento_em,consentimento_versao,email_verificacao_obrigatoria) VALUES($1,$2,$3,$4,$5,$6,1,NOW(),'2026-11-v1',$7) RETURNING id",
         [
           text(b.nome, "nome"),
           b.cpf ? text(b.cpf, "cpf", 20) : null,
@@ -257,8 +285,25 @@ export async function buildApp(
           b.telefone ? text(b.telefone, "telefone", 40) : null,
           email(b.email),
           await bcrypt.hash(password, 12),
+          requireEmailVerification,
         ],
       );
+      if (requireEmailVerification) {
+        const emailSent = await sendVerification(
+          db,
+          b.email,
+          options.sendVerification!,
+        );
+        reply.code(202);
+        return {
+          status: "verification_required",
+          emailSent,
+          message: emailSent
+            ? "Conta criada. Confira seu e-mail para confirmar o cadastro."
+            : "Conta criada, mas não foi possível enviar o e-mail agora. Use a opção de reenvio.",
+          proxima: "/confirmar-email.html",
+        };
+      }
       await newSession(req, reply, r.rows[0].id);
       return success({ message: "Etapa 1 concluída!" });
     },
@@ -269,7 +314,7 @@ export async function buildApp(
     async (req, reply) => {
       const b = body(req);
       const r = await db.query(
-        "SELECT id,nome,senha FROM usuarios WHERE lower(email)=$1 LIMIT 1",
+        "SELECT id,nome,senha,email_verificacao_obrigatoria,email_confirmado_em FROM usuarios WHERE lower(email)=$1 LIMIT 1",
         [email(b.email)],
       );
       const user = r.rows[0];
@@ -283,6 +328,16 @@ export async function buildApp(
       );
       if (!user || !valid)
         throw new HttpError(401, "Email ou senha inválidos.");
+      if (user.email_verificacao_obrigatoria && !user.email_confirmado_em) {
+        reply.code(403);
+        return {
+          status: "error",
+          code: "EMAIL_NOT_VERIFIED",
+          message:
+            "Confirme seu e-mail antes de entrar. Você pode solicitar outro link de confirmação.",
+          proxima: "/confirmar-email.html",
+        };
+      }
       await newSession(req, reply, user.id, remembered(b.lembrar));
       return success({
         lembrar: remembered(b.lembrar),
@@ -310,7 +365,7 @@ export async function buildApp(
       );
       const found = (
         await db.query(
-          "SELECT id,google_sub FROM usuarios WHERE google_sub=$1 OR lower(email)=$2 ORDER BY (google_sub=$1) DESC NULLS LAST LIMIT 1",
+          "SELECT id,email,google_sub,email_verificacao_obrigatoria,email_confirmado_em FROM usuarios WHERE google_sub=$1 OR lower(email)=$2 ORDER BY (google_sub=$1) DESC NULLS LAST LIMIT 1",
           [profile.sub, profile.email],
         )
       ).rows[0];
@@ -318,6 +373,25 @@ export async function buildApp(
         novo = false;
       if (found) {
         userId = found.id;
+        if (found.email_verificacao_obrigatoria && !found.email_confirmado_em) {
+          if (found.email.toLowerCase() !== profile.email.toLowerCase())
+            throw new HttpError(
+              403,
+              "Confirme o novo e-mail pelo link enviado antes de entrar com Google.",
+            );
+          await db.transaction(async (tx) => {
+            // Um pré-cadastro por terceiro não pode conservar a senha após o dono entrar por Google.
+            await tx.query(
+              "UPDATE usuarios SET senha=NULL,email_confirmado_em=NOW() WHERE id=$1",
+              [userId],
+            );
+            await tx.query(
+              "DELETE FROM verificacoes_email WHERE usuario_id=$1",
+              [userId],
+            );
+            await tx.query("DELETE FROM sessoes WHERE usuario_id=$1", [userId]);
+          });
+        }
         // Conta existente com o mesmo email verificado: vincula ao Google.
         if (!found.google_sub)
           await db.query("UPDATE usuarios SET google_sub=$1 WHERE id=$2", [
@@ -471,6 +545,30 @@ export async function buildApp(
     }
     if (values.estado && values.estado.length !== 2)
       throw new HttpError(400, "UF inválida.");
+    if (requireEmailVerification && values.email) {
+      const current = (
+        await db.query("SELECT email FROM usuarios WHERE id=$1", [req.userId])
+      ).rows[0];
+      if (current && current.email.toLowerCase() !== values.email) {
+        if (!options.sendVerification)
+          throw new HttpError(
+            503,
+            "Não é possível trocar o e-mail enquanto o envio de confirmação estiver indisponível.",
+          );
+        values.email_confirmado_em = null;
+        values.email_verificacao_obrigatoria = true;
+        await updateUser(req.userId!, values);
+        await db.query("DELETE FROM sessoes WHERE usuario_id=$1", [req.userId]);
+        if (options.sendVerification)
+          await sendVerification(db, values.email, options.sendVerification);
+        return {
+          status: "verification_required",
+          message:
+            "E-mail atualizado. Confirme o novo endereço antes de entrar novamente.",
+          proxima: "/confirmar-email.html",
+        };
+      }
+    }
     await updateUser(req.userId!, values);
     return success({ message: "Dados atualizados com sucesso!" });
   });
@@ -524,6 +622,24 @@ export async function buildApp(
     return success({ message: "Todas as transações foram removidas." });
   });
   await requirementsRoutes(app, db, options);
+  app.post(
+    "/api/email/confirmar",
+    { config: { rateLimit: { max: 20, timeWindow: "15 minutes" } } },
+    async (req) => confirmEmail(db, body(req).token),
+  );
+  app.post(
+    "/api/email/reenviar",
+    { config: { rateLimit: { max: 5, timeWindow: "15 minutes" } } },
+    async (req) => {
+      if (!options.sendVerification)
+        throw new HttpError(
+          503,
+          "O envio de confirmação está indisponível. Tente mais tarde.",
+        );
+      await sendVerification(db, body(req).email, options.sendVerification);
+      return verificationResponse();
+    },
+  );
   // Abrir o site/app vai direto para a tela de login (sem a página intermediária).
   const goToLogin = (_req: FastifyRequest, reply: FastifyReply) =>
     reply.redirect("/CashFlow_Tela_de_Login/login.html");

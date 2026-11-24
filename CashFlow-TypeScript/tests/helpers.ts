@@ -7,6 +7,7 @@ export async function testDatabase() {
     "001_schema.sql",
     "002_requisitos.sql",
     "003_google_lembrar.sql",
+    "004_email_verification.sql",
   ])
     await pg.exec(await readFile("database/" + f, "utf8"));
   const wrap = (client: any): Database => ({

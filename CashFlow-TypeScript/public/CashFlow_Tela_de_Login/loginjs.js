@@ -129,6 +129,12 @@ form.addEventListener('submit', async (e) => {
 
         const result = await authenticate(email, password, rememberInput.checked);
 
+        if (result.code === 'EMAIL_NOT_VERIFIED') {
+            try { sessionStorage.setItem('cashflow-verification-email', email); } catch { /* opcional */ }
+            window.location.assign('/confirmar-email.html');
+            return;
+        }
+
         if (result.status === "success") {
             applyRemember(rememberInput.checked);
             showMessage(successMsg, result.message, 0);
@@ -211,3 +217,4 @@ document.querySelectorAll('.input-field').forEach(input => {
         this.parentElement.style.transform = 'scale(1)';
     });
 });
+

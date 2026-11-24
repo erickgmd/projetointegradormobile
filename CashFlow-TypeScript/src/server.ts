@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { buildApp } from "./app.js";
 import { connectDatabase } from "./db.js";
-import { resetSender } from "./integrations/mail.js";
+import { resetSender, verificationSender } from "./integrations/mail.js";
 import { googleVerifier } from "./integrations/google.js";
 import { TelegramService } from "./integrations/telegram.js";
 import { saveTransaction, monthlySummary } from "./services/finance.js";
@@ -18,6 +18,8 @@ const app = await buildApp(db, {
   googleClientId: process.env.GOOGLE_CLIENT_ID || undefined,
   verifyGoogle: googleVerifier(process.env.GOOGLE_CLIENT_ID || undefined),
   sendReset: resetSender(),
+  requireEmailVerification: true,
+  sendVerification: verificationSender(),
   telegramSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
 });
 let stopWorkers = async () => {};
@@ -33,9 +35,13 @@ for (const signal of ["SIGTERM", "SIGINT"])
   });
 try {
   const ready = await db.query(
-    "SELECT to_regclass('public.sessoes') AS sessoes,to_regclass('public.operacoes') AS operacoes",
+    "SELECT to_regclass('public.sessoes') AS sessoes,to_regclass('public.operacoes') AS operacoes,to_regclass('public.verificacoes_email') AS verificacoes_email",
   );
-  if (!ready.rows[0]?.sessoes || !ready.rows[0]?.operacoes)
+  if (
+    !ready.rows[0]?.sessoes ||
+    !ready.rows[0]?.operacoes ||
+    !ready.rows[0]?.verificacoes_email
+  )
     throw new Error(
       "Estrutura desatualizada. Execute npm run db:migrate antes de iniciar.",
     );

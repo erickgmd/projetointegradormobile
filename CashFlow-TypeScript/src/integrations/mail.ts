@@ -1,5 +1,72 @@
 import nodemailer from "nodemailer";
 
+export function verificationEmail(link: string) {
+  const safe = escapeHtml(link);
+  return {
+    subject: "Confirme seu e-mail no CashFlow",
+    text: `Confirme seu cadastro no CashFlow. Abra este link e toque em Confirmar e-mail:\n${link}\n\nO link vale por 24 horas e só pode ser usado uma vez. Se você não criou a conta, ignore este e-mail.`,
+    html: `<html lang="pt-BR"><body style="background:#f1f5f9;font-family:Arial,sans-serif;color:#17365b;padding:24px"><main style="max-width:480px;margin:auto;background:white;padding:32px;border-radius:16px"><h1>CashFlow</h1><h2>Confirme seu e-mail</h2><p>Para liberar sua conta, abra o link abaixo e confirme seu endereço.</p><p><a style="display:inline-block;background:#2563eb;color:white;padding:14px 24px;border-radius:8px;text-decoration:none" href="${safe}">Confirmar cadastro</a></p><p>O link vale por 24 horas e só pode ser usado uma vez.</p><p>Se o botão não funcionar, copie: <span style="word-break:break-all">${safe}</span></p><p>Se você não criou a conta, ignore este e-mail.</p></main></body></html>`,
+  };
+}
+
+export function verificationSender() {
+  let origin: URL;
+  try {
+    origin = new URL(process.env.APP_ORIGIN ?? "");
+    if (
+      !["http:", "https:"].includes(origin.protocol) ||
+      origin.username ||
+      origin.password ||
+      (process.env.NODE_ENV === "production" && origin.protocol !== "https:")
+    )
+      return undefined;
+  } catch {
+    return undefined;
+  }
+  const link = (token: string) => {
+    const url = new URL("/confirmar-email.html", origin.origin);
+    url.hash = "token=" + encodeURIComponent(token);
+    return url.toString();
+  };
+  if (!process.env.SMTP_HOST || !process.env.SMTP_FROM) {
+    if (process.env.NODE_ENV === "production") return undefined;
+    return async (_address: string, token: string) => {
+      console.log(
+        "[CashFlow DEV] Confirmação de e-mail (não usar em produção): " +
+          link(token),
+      );
+    };
+  }
+  const port = Number(process.env.SMTP_PORT ?? 587);
+  const transport = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port,
+    secure: process.env.SMTP_SECURE === "true" || port === 465,
+    auth: process.env.SMTP_USER
+      ? {
+          user: process.env.SMTP_USER,
+          pass: String(process.env.SMTP_PASSWORD ?? "").replace(/\s+/g, ""),
+        }
+      : undefined,
+    connectionTimeout: 10000,
+    socketTimeout: 15000,
+  });
+  return async (address: string, token: string) => {
+    try {
+      await transport.sendMail({
+        from: process.env.SMTP_FROM,
+        to: address,
+        ...verificationEmail(link(token)),
+      });
+    } catch {
+      console.error(
+        "[CashFlow] Falha no envio de confirmação. Verifique o SMTP.",
+      );
+      throw new Error("Falha SMTP.");
+    }
+  };
+}
+
 const resetLink = (token: string) => {
   const origin = process.env.APP_ORIGIN;
   if (!origin)

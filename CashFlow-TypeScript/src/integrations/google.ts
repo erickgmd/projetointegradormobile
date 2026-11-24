@@ -24,7 +24,7 @@ export function googleVerifier(clientId?: string): GoogleVerifier | undefined {
     } catch {
       throw new HttpError(401, "Não foi possível confirmar sua conta Google.");
     }
-    if (!payload?.sub || !payload.email || payload.email_verified === false)
+    if (!payload?.sub || !payload.email || payload.email_verified !== true)
       throw new HttpError(401, "A conta Google não tem email verificado.");
     return {
       sub: payload.sub,

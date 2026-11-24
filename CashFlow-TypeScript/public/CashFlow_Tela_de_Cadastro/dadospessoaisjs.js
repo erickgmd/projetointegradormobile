@@ -161,6 +161,14 @@
         }),
       });
       const result = await response.json().catch(() => ({}));
+      if (response.ok && result.status === "verification_required") {
+        try {
+          sessionStorage.removeItem(DRAFT_KEY);
+          sessionStorage.setItem("cashflow-verification-email", email);
+        } catch { /* armazenamento opcional */ }
+        window.location.assign("/confirmar-email.html");
+        return;
+      }
       if (response.ok && result.status === "success") {
         try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* ok */ }
         window.location.assign("/CashFlow_Tela_de_Cadastro/endereco.html");
@@ -207,3 +215,4 @@
     onError: (message) => showAlert("error", message),
   });
 })();
+

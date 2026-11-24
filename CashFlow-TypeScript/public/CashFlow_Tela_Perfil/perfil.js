@@ -174,6 +174,11 @@ function setupForm() {
 
             const result = await response.json();
 
+            if (result.status === "verification_required") {
+                try { sessionStorage.setItem("cashflow-verification-email", String(formData.get("email") || "")); } catch { /* opcional */ }
+                window.location.assign("/confirmar-email.html");
+                return;
+            }
             if (result.status === "success") {
                 alert("Dados atualizados!");
                 await carregarPerfil();

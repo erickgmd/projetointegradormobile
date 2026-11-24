@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Confirmar e-mail — CashFlow</title>
+  <link rel="stylesheet" href="/auth.css">
+  <link rel="stylesheet" href="/confirmar-email.css">
+  <script src="/confirmar-email.js" defer></script>
+</head>
+<body class="auth-page">
+  <main class="verification-card">
+    <a class="brand" href="/CashFlow_Tela_de_Login/login.html">CashFlow</a>
+    <h1>Confirme seu e-mail</h1>
+    <p>Abra o link que enviamos para liberar o acesso à sua conta. Confira também a pasta de spam. O link vale por 24 horas.</p>
+    <p id="verificationStatus" role="status" aria-live="polite"></p>
+    <button id="confirmEmail" type="button" hidden>Confirmar e-mail</button>
+    <form id="resendForm">
+      <h2>Precisa de outro link?</h2>
+      <label for="verificationEmail">E-mail cadastrado</label>
+      <input id="verificationEmail" type="email" autocomplete="email" required maxlength="254">
+      <button id="resendEmail" type="submit">Reenviar confirmação</button>
+    </form>
+    <p><a href="/CashFlow_Tela_de_Login/login.html">Voltar ao login</a></p>
+  </main>
+</body>
+</html>

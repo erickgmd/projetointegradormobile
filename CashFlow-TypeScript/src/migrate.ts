@@ -9,6 +9,7 @@ try {
       "001_schema.sql",
       "002_requisitos.sql",
       "003_google_lembrar.sql",
+      "004_email_verification.sql",
     ])
       await tx.query(
         await readFile(new URL("../database/" + file, import.meta.url), "utf8"),
