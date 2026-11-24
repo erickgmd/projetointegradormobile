@@ -31,6 +31,7 @@ async function loadUserName() {
 
         if (result.status === "success") {
             const d = result.dados;
+            mostrarStatusEmail(d);
             const prefs = d.preferencias || {};
             prefs.theme ||= ({automatico:'system',claro:'light',escuro:'dark'})[prefs.tema] || 'system';
             prefs.fontScale ||= prefs.fonte || 100;
@@ -393,3 +394,38 @@ document.addEventListener("DOMContentLoaded", () => {
     maskMoney(document.getElementById("despesas"));
     maskMoney(document.getElementById("gastoMaximo"));
 });
+
+
+// Selo de confirmação ao lado do email, com reenvio do link.
+function mostrarStatusEmail(d) {
+    const el = document.getElementById("emailStatus");
+    if (!el || !d?.email) return;
+    el.hidden = false;
+    el.replaceChildren();
+    if (d.emailConfirmado) {
+        el.className = "email-status ok";
+        el.textContent = "✓ Email confirmado";
+        return;
+    }
+    el.className = "email-status pendente";
+    el.textContent = "Email ainda não confirmado. ";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "email-status-btn";
+    btn.textContent = "Reenviar link";
+    btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        btn.textContent = "Enviando...";
+        try {
+            const r = await fetch("/api/email/reenviar", { method: "POST", credentials: "include" });
+            const res = await r.json().catch(() => ({}));
+            btn.textContent = r.ok ? "Enviado ✓" : "Tentar de novo";
+            btn.disabled = r.ok;
+            if (!r.ok && res.message) el.append(" " + res.message);
+        } catch {
+            btn.textContent = "Tentar de novo";
+            btn.disabled = false;
+        }
+    });
+    el.appendChild(btn);
+}

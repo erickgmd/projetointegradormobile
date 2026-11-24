@@ -316,13 +316,14 @@ class FinanceManager {
             dialog.setAttribute('aria-labelledby', 'confirmTitulo');
             dialog.innerHTML = `
                 <form method="dialog" class="confirm-sheet">
+                    <div class="confirm-icon" aria-hidden="true">🗑️</div>
                     <h3 id="confirmTitulo">Excluir todas as transações?</h3>
-                    <p>Isso apaga ${total} transaç${total === 1 ? 'ão' : 'ões'} de forma definitiva. Não dá para desfazer.</p>
-                    <label for="confirmTexto">Para confirmar, digite <strong>EXCLUIR</strong>:</label>
-                    <input id="confirmTexto" type="text" autocomplete="off" autocapitalize="characters">
+                    <p>Isso apaga <strong>${total} transaç${total === 1 ? 'ão' : 'ões'}</strong> de forma definitiva. Não dá para desfazer.</p>
+                    <label for="confirmTexto">Para confirmar, digite <strong>EXCLUIR</strong></label>
+                    <input id="confirmTexto" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="EXCLUIR">
                     <div class="confirm-actions">
-                        <button type="button" class="btn-secondary" data-acao="cancelar">Cancelar</button>
-                        <button type="submit" class="btn-danger" data-acao="excluir" disabled>Excluir tudo</button>
+                        <button type="button" class="confirm-cancel" data-acao="cancelar">Cancelar</button>
+                        <button type="submit" class="confirm-ok" data-acao="excluir" disabled>Excluir tudo</button>
                     </div>
                 </form>`;
             document.body.appendChild(dialog);
@@ -2030,242 +2031,8 @@ function initThemePanel() {
 
 
 /* CASHBOT ANIMADO - MANUAL, SEM IA E SEM BOTPRESS */
-(function () {
-    function normalizeText(text) {
-        return String(text || "")
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "");
-    }
+// O CashBot fica em cashbot.js.
 
-    const moeda = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-
-    // Perguntas sobre os próprios números ("quanto gastei esse mês?") respondem com os dados da conta.
-    function getDataAnswer(text) {
-        const fm = window.financeManager;
-        const lista = fm && Array.isArray(fm.transactions) ? fm.transactions : null;
-        if (!lista) return "";
-        const pedeValor = /\b(quanto|qual|quais|meu|minha|total|onde)\b/.test(text) || /(gastei|recebi|ganhei|sobrou|entrou)/.test(text);
-        if (!pedeValor) return "";
-        const querGasto = /(gast|despes|paguei|saiu|saida)/.test(text);
-        const querReceita = /(receb|receita|ganhei|ganho|entrou|entrada|salario)/.test(text);
-        const querSaldo = /(saldo|sobrou|sobra|balanco)/.test(text);
-        const querMaior = /(maior|mais gastei|onde mais|categoria)/.test(text) && querGasto;
-        if (!querGasto && !querReceita && !querSaldo) return "";
-
-        const hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).format(new Date()).slice(0, 7);
-        const tudo = /(total|geral|tudo|sempre|todo)/.test(text) && !/(mes|mês)/.test(text);
-        const doPeriodo = tudo ? lista : lista.filter(t => String(t.date).slice(0, 7) === hoje);
-        const rotulo = tudo ? "no total" : "neste mês";
-        const soma = (tipo) => doPeriodo.filter(t => t.type === tipo).reduce((acc, t) => acc + Math.round(Number(t.amount) * 100), 0) / 100;
-        const receitas = soma("income"), despesas = soma("expense");
-
-        if (querMaior) {
-            const porCategoria = {};
-            doPeriodo.filter(t => t.type === "expense").forEach(t => { porCategoria[t.category] = (porCategoria[t.category] || 0) + Number(t.amount); });
-            const top = Object.entries(porCategoria).sort((a, b) => b[1] - a[1])[0];
-            if (!top) return `Você não tem despesas registradas ${rotulo}.`;
-            const nome = typeof fm.formatCategory === "function" ? fm.formatCategory(top[0]) : top[0];
-            return `Sua maior despesa ${rotulo} é em ${nome}: ${moeda(top[1])}.`;
-        }
-        if (querSaldo) {
-            const saldo = Math.round(receitas * 100 - despesas * 100) / 100;
-            return `Seu saldo ${rotulo} é ${moeda(saldo)} (receitas ${moeda(receitas)} − despesas ${moeda(despesas)}).`;
-        }
-        if (querGasto && querReceita)
-            return `${rotulo[0].toUpperCase() + rotulo.slice(1)} você recebeu ${moeda(receitas)} e gastou ${moeda(despesas)}.`;
-        if (querGasto) return `Você gastou ${moeda(despesas)} ${rotulo}.`;
-        return `Você recebeu ${moeda(receitas)} ${rotulo}.`;
-    }
-
-    function getCashBotAnswer(question) {
-        const text = normalizeText(question);
-        const dataAnswer = getDataAnswer(text);
-        if (dataAnswer) return dataAnswer;
-
-        const answers = [
-            {
-                keys: ["cadastrar", "adicionar", "nova transacao", "registrar", "lancamento", "salvar"],
-                answer: "Para cadastrar uma transação, preencha descrição, valor, data, categoria e tipo. Depois clique em Adicionar Transação."
-            },
-            {
-                keys: ["excluir", "apagar", "remover", "deletar", "lixeira"],
-                answer: "Para excluir uma transação, vá ao Histórico de Transações e clique no ícone de lixeira ao lado do lançamento."
-            },
-            {
-                keys: ["limpar", "limpar tudo", "todas as transacoes", "zerar"],
-                answer: "Para apagar todas as transações, use o botão Excluir todas as transações, no fim do Histórico. Para confirmar, é preciso digitar EXCLUIR."
-            },
-            {
-                keys: ["filtrar", "filtro", "mes", "tipo", "receita", "despesa"],
-                answer: "Use os filtros de mês e tipo no Histórico. Você também pode clicar nos cards de Receitas ou Despesas para filtrar automaticamente."
-            },
-            {
-                keys: ["relatorio", "pdf", "gerar relatorio", "baixar"],
-                answer: "Na aba Relatórios, selecione o mês desejado e clique em Gerar Relatório PDF."
-            },
-            {
-                keys: ["tema", "contraste", "claro", "escuro", "aparencia", "brilho", "fonte"],
-                answer: "Clique em Aparência para escolher tema claro, escuro ou automático. Também é possível ajustar contraste, brilho e tamanho da fonte."
-            },
-            {
-                keys: ["vlibras", "libras", "acessibilidade"],
-                answer: "O CashFlow possui VLibras para acessibilidade em Libras. Use o botão do VLibras na tela para ativar a tradução."
-            },
-            {
-                keys: ["alerta", "gastos", "excesso", "80", "oitenta"],
-                answer: "O alerta de gastos aparece em 80% e em 100% do gasto máximo mensal configurado no perfil."
-            },
-            {
-                keys: ["saldo", "resumo", "card", "cards"],
-                answer: "O saldo atual é calculado automaticamente: receitas menos despesas."
-            },
-            {
-                keys: ["grafico", "categoria", "categorias"],
-                answer: "O gráfico por categoria mostra como suas receitas e despesas estão distribuídas."
-            },
-            {
-                keys: ["calculadora", "salario", "juros", "financiamento", "moeda"],
-                answer: "Na aba Ferramentas, você encontra calculadoras de salário, juros compostos, financiamento e conversor de moedas."
-            }
-        ];
-
-        const found = answers.find(item => item.keys.some(key => text.includes(key)));
-
-        if (found) return found.answer;
-
-        if (text.includes("econom") || text.includes("poupar")) {
-            return "Uma boa prática é acompanhar gastos por categoria, criar uma meta mensal e manter uma reserva de emergência.";
-        }
-
-        if (text.includes("invest")) {
-            return "Para investir melhor, defina objetivo, prazo e perfil de risco. Para curto prazo, priorize segurança e liquidez.";
-        }
-
-        return "Posso ajudar com transações, filtros, relatórios, gráficos, saldo, ferramentas, tema, contraste, VLibras e alertas. Também respondo perguntas como \"quanto gastei este mês?\" ou \"qual meu saldo?\".";
-    }
-
-    function initCashBotAnimated() {
-        const fab = document.getElementById("chatbotFab");
-        const panel = document.getElementById("chatbotPanel");
-        const closeBtn = document.getElementById("closeChatbot");
-        const form = document.getElementById("chatbotForm");
-        const input = document.getElementById("chatInput");
-        const messages = document.getElementById("chatMessages");
-
-        if (!fab || !panel || !form || !input || !messages) return;
-
-        function openChat() {
-            panel.classList.remove("cashbot-hidden");
-            panel.classList.add("cashbot-open");
-            fab.classList.add("cashbot-active");
-            setTimeout(() => input.focus(), 180);
-        }
-
-        function closeChat() {
-            panel.classList.add("cashbot-hidden");
-            panel.classList.remove("cashbot-open");
-            fab.classList.remove("cashbot-active");
-        }
-
-        function toggleChat(event) {
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-
-            if (panel.classList.contains("cashbot-hidden")) {
-                openChat();
-            } else {
-                closeChat();
-            }
-        }
-
-        function createMessage(type, text) {
-            const row = document.createElement("div");
-            row.className = type === "user"
-                ? "cashbot-message cashbot-message-user"
-                : "cashbot-message cashbot-message-bot";
-
-            const avatar = document.createElement("div");
-            avatar.className = "cashbot-message-avatar";
-            avatar.textContent = type === "user" ? "Você" : "CF";
-
-            const bubble = document.createElement("div");
-            bubble.className = "cashbot-bubble";
-            bubble.textContent = text;
-
-            if (type === "user") {
-                row.appendChild(bubble);
-                row.appendChild(avatar);
-            } else {
-                row.appendChild(avatar);
-                row.appendChild(bubble);
-            }
-
-            messages.appendChild(row);
-            messages.scrollTop = messages.scrollHeight;
-        }
-
-        function showTyping(question) {
-            const typing = document.createElement("div");
-            typing.className = "cashbot-message cashbot-message-bot cashbot-typing-row";
-            typing.innerHTML = `
-                <div class="cashbot-message-avatar">CF</div>
-                <div class="cashbot-bubble cashbot-typing">
-                    <span></span><span></span><span></span>
-                </div>
-            `;
-
-            messages.appendChild(typing);
-            messages.scrollTop = messages.scrollHeight;
-
-            setTimeout(() => {
-                typing.remove();
-                createMessage("bot", getCashBotAnswer(question));
-            }, 560);
-        }
-
-        function sendQuestion(question) {
-            const text = String(question || "").trim();
-
-            if (!text) return;
-
-            // Depois da primeira pergunta, os atalhos recolhem e a conversa ganha espaço.
-            panel.classList.add("cashbot-chatting");
-            createMessage("user", text);
-            input.value = "";
-            showTyping(text);
-        }
-
-        fab.onclick = toggleChat;
-
-        if (closeBtn) {
-            closeBtn.onclick = function (event) {
-                event.preventDefault();
-                closeChat();
-            };
-        }
-
-        form.onsubmit = function (event) {
-            event.preventDefault();
-            sendQuestion(input.value);
-        };
-
-        document.querySelectorAll(".cashbot-question").forEach(button => {
-            button.onclick = function () {
-                openChat();
-                sendQuestion(button.dataset.question || button.textContent);
-            };
-        });
-
-        document.addEventListener("keydown", event => {
-            if (event.key === "Escape") closeChat();
-        });
-    }
-
-    window.addEventListener("load", initCashBotAnimated);
-})();
 
 
 /* CLIQUE NOS CARDS DO RESUMO
@@ -2686,3 +2453,105 @@ function initThemePanel() {
 
 // Recarrega lançamentos feitos pelo bot, sem renovar a sessão por polling.
 setInterval(async()=>{if(document.visibilityState!=="visible"||!window.financeManager)return;try{await window.financeManager.loadTransactions();window.financeManager.updateDisplay();}catch(error){console.warn('Atualização financeira pendente.');}},30000);
+
+// Avisos da conta no topo da Home: boas-vindas (conta nova) e confirmação de email.
+(function initContaAvisos() {
+    const esc = (v) => (window.cashflowEscape ? window.cashflowEscape(v) : String(v ?? ''));
+    async function montar() {
+        const box = document.getElementById('contaAvisos');
+        if (!box) return;
+        let dados;
+        try {
+            const r = await fetch('/api/perfil', { credentials: 'include', cache: 'no-store' });
+            if (!r.ok) return;
+            dados = (await r.json()).dados || {};
+        } catch { return; }
+        const params = new URLSearchParams(location.search);
+        const novo = params.get('bemvindo') === '1';
+        if (novo) {
+            params.delete('bemvindo');
+            history.replaceState(null, '', location.pathname + (params.toString() ? `?${params}` : '') + location.hash);
+        }
+        const primeiro = String(dados.nome || '').trim().split(/\s+/)[0];
+        const cards = [];
+        if (novo) {
+            cards.push(`
+                <div class="conta-aviso conta-aviso-boasvindas" role="status">
+                    <div class="conta-aviso-ico" aria-hidden="true">🎉</div>
+                    <div class="conta-aviso-texto">
+                        <strong>Bem-vindo(a)${primeiro ? ', ' + esc(primeiro) : ''}! Sua conta está pronta.</strong>
+                        <span>Comece registrando um gasto ou uma receita. Endereço e dados financeiros são opcionais e ficam no seu perfil.</span>
+                    </div>
+                    <div class="conta-aviso-acoes">
+                        <a class="conta-aviso-btn" href="../CashFlow_Tela_Perfil/perfil.html">Completar perfil</a>
+                        <button type="button" class="conta-aviso-fechar" data-fechar aria-label="Fechar aviso de boas-vindas">Agora não</button>
+                    </div>
+                </div>`);
+        }
+        if (dados.email && !dados.emailConfirmado) {
+            cards.push(`
+                <div class="conta-aviso conta-aviso-email" role="status">
+                    <div class="conta-aviso-ico" aria-hidden="true">📧</div>
+                    <div class="conta-aviso-texto">
+                        <strong>Confirme seu email</strong>
+                        <span>Enviamos um link para <b>${esc(dados.email)}</b>. Confirmar garante que você consiga recuperar a senha. Não achou? Veja o spam.</span>
+                        <span class="conta-aviso-status" data-status></span>
+                    </div>
+                    <div class="conta-aviso-acoes">
+                        <button type="button" class="conta-aviso-btn" data-reenviar>Reenviar link</button>
+                    </div>
+                </div>`);
+        }
+        box.innerHTML = cards.join('');
+        box.querySelectorAll('[data-fechar]').forEach((b) =>
+            b.addEventListener('click', () => b.closest('.conta-aviso').remove()));
+        const reenviar = box.querySelector('[data-reenviar]');
+        reenviar?.addEventListener('click', async () => {
+            const status = box.querySelector('[data-status]');
+            reenviar.disabled = true;
+            reenviar.textContent = 'Enviando...';
+            try {
+                const r = await fetch('/api/email/reenviar', { method: 'POST', credentials: 'include' });
+                const d = await r.json().catch(() => ({}));
+                status.textContent = d.message || (r.ok ? 'Link enviado.' : 'Não foi possível enviar agora.');
+                status.classList.toggle('erro', !r.ok);
+                if (d.confirmado) setTimeout(() => reenviar.closest('.conta-aviso')?.remove(), 1500);
+                reenviar.textContent = r.ok ? 'Enviado ✓' : 'Tentar de novo';
+                reenviar.disabled = r.ok;
+            } catch {
+                status.textContent = 'Sem conexão. Tente de novo.';
+                status.classList.add('erro');
+                reenviar.textContent = 'Tentar de novo';
+                reenviar.disabled = false;
+            }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montar);
+    else montar();
+})();
+
+
+// Aparência pelo menu do usuário (no celular o botão 🎨 flutuante fica escondido)
+// e o 💬 que some ao rolar para baixo, para não cobrir o conteúdo.
+(function initBotoesFlutuantes() {
+    function montar() {
+        document.getElementById('openAppearanceMenu')?.addEventListener('click', () => {
+            document.getElementById('userDropdown')?.classList.remove('show', 'active', 'open');
+            document.getElementById('themePanel')?.classList.remove('hidden-theme-panel');
+        });
+        const fab = document.getElementById('chatbotFab');
+        if (!fab) return;
+        let ultimoY = window.scrollY, timer;
+        window.addEventListener('scroll', () => {
+            const y = window.scrollY;
+            const painelAberto = fab.classList.contains('cashbot-active');
+            if (!painelAberto && y > ultimoY + 4 && y > 120) fab.classList.add('fab-escondido');
+            else if (y < ultimoY - 4) fab.classList.remove('fab-escondido');
+            ultimoY = y;
+            clearTimeout(timer);
+            timer = setTimeout(() => fab.classList.remove('fab-escondido'), 900);
+        }, { passive: true });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montar);
+    else montar();
+})();

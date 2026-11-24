@@ -1,0 +1,41 @@
+/* Cadastro em um passo: formulário estreito e direto. */
+.signup-page .container { max-width: 520px; }
+.signup-page .form-container { padding-top: 24px; }
+.signup-page .form-group { margin-bottom: 18px; }
+.signup-page .cadastroEtapa1 .btn-primary { width: 100%; font-size: 1.05rem; padding: 15px; }
+.signup-page .login-link { text-align: center; margin-top: 18px; }
+.signup-page .checkbox-container { margin-top: 6px; }
+
+.email-suggestion {
+    margin: 8px 0 0;
+    font-size: 0.9rem;
+    color: #475569;
+}
+.email-suggestion-btn {
+    background: none;
+    border: none;
+    padding: 0 2px;
+    color: #1d4ed8;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.signup-session {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
+}
+.signup-session p { margin: 0; }
+.signup-session-btn { text-decoration: none; padding: 8px 14px; border-radius: 10px; }
+.signup-session[hidden], .email-suggestion[hidden] { display: none !important; }
+.signup-session-btn { background: #1e3a8a; color: #fff !important; font-weight: 700; }

@@ -2997,21 +2997,6 @@ body.dark-theme .balance-total.is-negative,
 body.theme-dark .btn-danger-outline,
 [data-theme="dark"] .btn-danger-outline { color: #f87171; border-color: rgba(248, 113, 113, 0.6); }
 
-.confirm-dialog {
-    border: none;
-    border-radius: 16px;
-    padding: 0;
-    max-width: min(420px, calc(100vw - 32px));
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
-}
-.confirm-dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
-.confirm-sheet { display: grid; gap: 12px; padding: 22px; color: #0f172a; background: #ffffff; }
-.confirm-sheet h3 { margin: 0; font-size: 1.15rem; color: #b91c1c; }
-.confirm-sheet p { margin: 0; color: #334155; line-height: 1.5; }
-.confirm-sheet input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; }
-.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
-.confirm-actions .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
-
 /* Erro das calculadoras dentro do próprio card. */
 .tool-error {
     margin: 10px 0 0;
@@ -3025,18 +3010,263 @@ body.theme-dark .btn-danger-outline,
 body.theme-dark .tool-error,
 [data-theme="dark"] .tool-error { color: #fca5a5; }
 
-/* CashBot: depois da primeira pergunta, a conversa ocupa o espaço dos atalhos. */
-.cashbot-chatting .cashbot-welcome,
-.cashbot-chatting .cashbot-shortcuts-title,
-.cashbot-chatting .cashbot-shortcuts {
-    display: none !important;
-}
-.cashbot-chatting .cashbot-messages {
-    height: 360px !important;
-    max-height: 55vh !important;
-}
-
 /* Celular: espaço no fim da página para os botões flutuantes (💬 e 🎨) não cobrirem conteúdo. */
 @media (max-width: 768px) {
     .tab-content.active { padding-bottom: 96px; }
+}
+
+
+/* ===== Ajustes de usabilidade (nov/2026, parte 2) ===== */
+
+/* ---------- Resultado das calculadoras no tema escuro ----------
+   O texto usava a cor do tema claro (quase preto) sobre fundo escuro. */
+body.theme-dark .result-box h4,
+body.theme-dark .result-item span:last-child,
+body.theme-dark .result-item.total,
+body.theme-dark .result-item.total span {
+    color: #f8fafc !important;
+}
+body.theme-dark .result-item span:first-child { color: #cbd5e1 !important; }
+body.theme-dark .result-item { border-bottom-color: rgba(148, 163, 184, 0.22) !important; }
+body.theme-dark .result-item.total {
+    background: rgba(59, 130, 246, 0.16) !important;
+    border-color: rgba(96, 165, 250, 0.35) !important;
+}
+body.theme-dark .result-item.total span:last-child { color: #86efac !important; }
+.result-item.total span:last-child { color: #15803d; }
+
+/* ---------- Modal "Excluir todas as transações" ---------- */
+.confirm-dialog {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(440px, calc(100vw - 32px));
+    max-width: none;
+    height: fit-content;
+    border: none;
+    border-radius: 20px;
+    padding: 0;
+    background: transparent;
+    box-shadow: 0 30px 80px rgba(2, 6, 23, 0.45);
+}
+.confirm-dialog::backdrop { background: rgba(2, 6, 23, 0.62); backdrop-filter: blur(3px); }
+.confirm-dialog[open] { animation: confirmIn 0.18s ease-out; }
+@keyframes confirmIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.confirm-sheet {
+    display: grid;
+    gap: 14px;
+    padding: 26px 24px 22px;
+    border-radius: 20px;
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+}
+.confirm-sheet .confirm-icon {
+    width: 48px; height: 48px;
+    display: grid; place-items: center;
+    border-radius: 14px;
+    background: #fee2e2;
+    font-size: 1.4rem;
+}
+.confirm-sheet h3 { margin: 0; font-size: 1.2rem; color: #b91c1c; }
+.confirm-sheet p { margin: 0; color: #334155; line-height: 1.55; }
+.confirm-sheet label { color: #0f172a; font-weight: 600; font-size: 0.95rem; }
+.confirm-sheet label strong {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #fee2e2; color: #b91c1c;
+    padding: 1px 6px; border-radius: 6px; letter-spacing: 0.04em;
+}
+.confirm-sheet input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 12px;
+    font-size: 1rem;
+    background: #ffffff;
+    color: #0f172a;
+    letter-spacing: 0.06em;
+}
+.confirm-sheet input:focus { outline: none; border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18); }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+.confirm-dialog .confirm-actions button {
+    width: auto !important;
+    min-height: 46px;
+    padding: 0 20px !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 0.98rem !important;
+    cursor: pointer;
+    box-shadow: none !important;
+    transform: none !important;
+}
+.confirm-dialog .confirm-cancel {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+.confirm-dialog .confirm-cancel:hover { background: #e2e8f0 !important; }
+.confirm-dialog .confirm-ok {
+    background: #dc2626 !important;
+    color: #ffffff !important;
+    border: 1px solid #dc2626 !important;
+}
+.confirm-dialog .confirm-ok:hover:not(:disabled) { background: #b91c1c !important; }
+.confirm-dialog .confirm-ok:disabled { opacity: 0.45; cursor: not-allowed; }
+body.theme-dark .confirm-sheet { background: #0f172a; color: #e2e8f0; border-color: rgba(148, 163, 184, 0.28); }
+body.theme-dark .confirm-sheet .confirm-icon { background: rgba(220, 38, 38, 0.18); }
+body.theme-dark .confirm-sheet h3 { color: #fca5a5; }
+body.theme-dark .confirm-sheet p { color: #cbd5e1; }
+body.theme-dark .confirm-sheet label { color: #f1f5f9 !important; }
+body.theme-dark .confirm-sheet label strong { background: rgba(220, 38, 38, 0.22); color: #fecaca; }
+body.theme-dark .confirm-sheet input { background: #020617; color: #f8fafc; border-color: rgba(148, 163, 184, 0.4); }
+body.theme-dark .confirm-dialog .confirm-cancel { background: #1e293b !important; color: #e2e8f0 !important; border-color: rgba(148, 163, 184, 0.35) !important; }
+body.theme-dark .confirm-dialog .confirm-cancel:hover { background: #334155 !important; }
+@media (max-width: 480px) {
+    .confirm-actions { flex-direction: column-reverse; }
+    .confirm-dialog .confirm-actions button { width: 100% !important; }
+}
+
+/* ---------- Avisos da conta (boas-vindas e confirmação de email) ---------- */
+.conta-avisos:empty { display: none; }
+.conta-avisos { display: grid; gap: 12px; margin: 0 0 18px; }
+.conta-aviso {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #0f172a;
+}
+.conta-aviso-email { border-color: #fde68a; background: #fffbeb; }
+.conta-aviso-ico { font-size: 1.6rem; line-height: 1; }
+.conta-aviso-texto { flex: 1 1 260px; display: grid; gap: 4px; font-size: 0.93rem; line-height: 1.45; color: #334155; }
+.conta-aviso-texto strong { color: #0f172a; font-size: 1rem; }
+.conta-aviso-status { font-weight: 600; color: #15803d; }
+.conta-aviso-status.erro { color: #b91c1c; }
+.conta-aviso-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.conta-aviso-btn, .conta-aviso-fechar {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 40px; padding: 0 16px; border-radius: 10px;
+    font-weight: 700; font-size: 0.92rem; cursor: pointer; text-decoration: none;
+    width: auto !important;
+}
+.conta-aviso-btn { background: #2563eb; color: #ffffff; border: 1px solid #2563eb; }
+.conta-aviso-btn:disabled { opacity: 0.6; cursor: default; }
+.conta-aviso-fechar { background: transparent; color: #334155; border: 1px solid #cbd5e1; }
+body.theme-dark .conta-aviso { background: rgba(37, 99, 235, 0.12); border-color: rgba(96, 165, 250, 0.35); }
+body.theme-dark .conta-aviso-email { background: rgba(234, 179, 8, 0.1); border-color: rgba(250, 204, 21, 0.35); }
+body.theme-dark .conta-aviso-texto { color: #cbd5e1; }
+body.theme-dark .conta-aviso-texto strong, body.theme-dark .conta-aviso-texto b { color: #f8fafc; }
+body.theme-dark .conta-aviso-status { color: #86efac; }
+body.theme-dark .conta-aviso-status.erro { color: #fca5a5; }
+body.theme-dark .conta-aviso-fechar { color: #e2e8f0; border-color: rgba(148, 163, 184, 0.4); }
+
+/* ---------- Botões flutuantes (💬 e 🎨) sem cobrir conteúdo ---------- */
+/* Espaço no fim da página: o último card termina acima dos botões. */
+.app-shell { padding-bottom: 96px; }
+/* Item "Aparência" no menu do usuário (no celular substitui o botão 🎨). */
+.user-dropdown .user-dropdown-item {
+    display: block; width: 100%; text-align: left;
+    background: none; border: none; cursor: pointer;
+    font: inherit; color: inherit; padding: 10px 14px;
+}
+@media (max-width: 768px) {
+    .app-shell { padding-bottom: 0; }
+    /* Só um botão flutuante no celular; Aparência fica no menu do usuário. */
+    #themePanelToggle.theme-panel-toggle { display: none !important; }
+    /* O 💬 some enquanto a pessoa rola para baixo e volta ao parar ou subir. */
+    #chatbotFab.cashbot-fab { transition: transform 0.25s ease, opacity 0.25s ease !important; }
+    #chatbotFab.cashbot-fab.fab-escondido { transform: translateY(140%) !important; opacity: 0; pointer-events: none; }
+    .tab-content.active { padding-bottom: 80px; }
+}
+
+/* ---------- CashBot (nov/2026) ---------- */
+#chatbotPanel.cashbot-panel {
+    width: min(400px, calc(100vw - 48px)) !important;
+    height: min(620px, calc(100dvh - 140px)) !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 22px !important;
+    padding: 0 !important;
+}
+#chatbotPanel.cashbot-hidden { display: none !important; }
+#chatbotPanel .cashbot-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+#chatbotPanel .cashbot-header-actions { display: flex; gap: 6px; align-items: center; }
+#chatbotPanel .cashbot-icon-btn {
+    width: 34px; height: 34px; border-radius: 10px; border: none; cursor: pointer;
+    background: rgba(255, 255, 255, 0.16); color: inherit; font-size: 1.05rem; line-height: 1;
+}
+#chatbotPanel .cashbot-icon-btn:hover { background: rgba(255, 255, 255, 0.28); }
+#chatbotPanel .cashbot-status { display: inline-flex; align-items: center; gap: 6px; }
+#chatbotPanel .cashbot-status i { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25); }
+#chatbotPanel .cashbot-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+#chatbotPanel .cashbot-messages {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    padding: 16px 14px !important;
+    gap: 10px !important;
+}
+#chatbotPanel .cashbot-bubble { max-width: 86%; line-height: 1.45; }
+#chatbotPanel .cashbot-bubble p { margin: 0; }
+#chatbotPanel .cashbot-entra { animation: cashbotEntra 0.22s ease-out both; }
+@keyframes cashbotEntra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.cashbot-itens { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.cashbot-itens li {
+    display: flex; justify-content: space-between; gap: 12px; align-items: baseline;
+    padding: 7px 10px; border-radius: 10px; background: rgba(37, 99, 235, 0.07); font-size: 0.9rem;
+}
+.cashbot-item-k { color: #475569; }
+.cashbot-item-v { font-weight: 700; color: #0f172a; text-align: right; white-space: nowrap; }
+.cashbot-itens li.cashbot-item-texto { justify-content: flex-start; background: transparent; padding: 2px 0; }
+.cashbot-itens li.cashbot-item-texto .cashbot-item-v { font-weight: 500; white-space: normal; text-align: left; }
+.cashbot-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.cashbot-acao {
+    border: 1px solid #2563eb; background: #2563eb; color: #fff; cursor: pointer;
+    border-radius: 999px; padding: 7px 12px; font-size: 0.84rem; font-weight: 700; width: auto !important;
+}
+.cashbot-acao:hover { background: #1d4ed8; }
+
+/* Sugestões: sempre visíveis, acima do campo de texto, mudam conforme a conversa. */
+#cashbotChips.cashbot-chips {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 12px;
+    border-top: 1px solid rgba(148, 163, 184, 0.25);
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+#cashbotChips:empty { display: none; }
+.cashbot-chip {
+    flex: 0 0 auto; white-space: nowrap; cursor: pointer;
+    border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8;
+    border-radius: 999px; padding: 7px 12px; font-size: 0.84rem; font-weight: 600; width: auto !important;
+}
+.cashbot-chip:hover { background: #dbeafe; }
+#chatbotPanel .cashbot-input-area { flex: 0 0 auto; }
+.cashbot-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+body.theme-dark .cashbot-itens li { background: rgba(96, 165, 250, 0.12); }
+body.theme-dark .cashbot-item-k { color: #cbd5e1; }
+body.theme-dark .cashbot-item-v { color: #f8fafc; }
+body.theme-dark .cashbot-chip { background: rgba(37, 99, 235, 0.18); border-color: rgba(96, 165, 250, 0.4); color: #bfdbfe; }
+body.theme-dark .cashbot-chip:hover { background: rgba(37, 99, 235, 0.3); }
+body.theme-dark #cashbotChips.cashbot-chips { border-top-color: rgba(148, 163, 184, 0.2); }
+
+@media (max-width: 768px) {
+    #chatbotPanel.cashbot-panel {
+        width: auto !important;
+        height: calc(100dvh - 170px - env(safe-area-inset-bottom)) !important;
+    }
 }

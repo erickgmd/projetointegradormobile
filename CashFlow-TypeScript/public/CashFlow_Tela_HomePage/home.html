@@ -73,11 +73,15 @@
                             </div>
                             <hr>
                             <a href="../CashFlow_Tela_Perfil/perfil.html" id="editProfileBtn">📝 Editar Perfil</a>
+                            <button type="button" id="openAppearanceMenu" class="user-dropdown-item">🎨 Aparência e acessibilidade</button>
                             <a href="../CashFlow_Tela_de_Login/login.html" id="logoutBtn" class="logout">🚪 Logout</a>
                         </div>
                     </div>
                 </div>
             </header>
+
+            <!-- Avisos da conta: boas-vindas e confirmação de email -->
+            <div id="contaAvisos" class="conta-avisos" aria-live="polite"></div>
 
             <!-- HERO / BOAS-VINDAS -->
             <section class="hero-panel">
@@ -571,6 +575,7 @@
         if (window.Chart && window.matchMedia("(max-width: 768px)").matches) window.Chart.defaults.animation = false;
     </script>
     <script src="home1.js"></script>
+    <script src="cashbot.js"></script>
     <script>
         // Tocar no logo/nome CashFlow volta para o Dashboard, no topo da página.
         (function () {
@@ -600,49 +605,27 @@
     <aside id="chatbotPanel" class="cashbot-panel cashbot-hidden" aria-label="Assistente CashFlow">
         <div class="cashbot-header">
             <div class="cashbot-profile">
-                <div class="cashbot-avatar">CF</div>
+                <div class="cashbot-avatar" aria-hidden="true">CF</div>
                 <div>
                     <h3>CashBot</h3>
-                    <span>Assistente do CashFlow</span>
+                    <span class="cashbot-status"><i aria-hidden="true"></i>Seu assistente financeiro</span>
                 </div>
             </div>
-
-            <button id="closeChatbot" class="cashbot-close" type="button" aria-label="Fechar chatbot">×</button>
+            <div class="cashbot-header-actions">
+                <button id="resetChatbot" class="cashbot-icon-btn" type="button" aria-label="Começar nova conversa" title="Nova conversa">↺</button>
+                <button id="closeChatbot" class="cashbot-close" type="button" aria-label="Fechar assistente">×</button>
+            </div>
         </div>
 
         <div class="cashbot-content">
-            <div class="cashbot-welcome">
-                <strong>Olá! 👋</strong>
-                <span>Escolha uma pergunta rápida ou digite sua dúvida sobre o CashFlow.</span>
-            </div>
-
-            <div class="cashbot-shortcuts-title">Perguntas rápidas</div>
-
-            <div class="cashbot-shortcuts">
-                <button type="button" class="cashbot-question" data-question="Quanto gastei este mês?">Quanto gastei?</button>
-                <button type="button" class="cashbot-question" data-question="Qual meu saldo este mês?">Meu saldo</button>
-                <button type="button" class="cashbot-question" data-question="Como cadastrar uma transação?">Cadastrar transação</button>
-                <button type="button" class="cashbot-question" data-question="Como excluir uma transação?">Excluir transação</button>
-                <button type="button" class="cashbot-question" data-question="Como excluir todas as transações?">Excluir todas</button>
-                <button type="button" class="cashbot-question" data-question="Como filtrar por mês ou tipo?">Filtrar</button>
-                <button type="button" class="cashbot-question" data-question="Como gerar relatório financeiro?">Gerar relatório</button>
-                <button type="button" class="cashbot-question" data-question="Como mudar tema e contraste?">Tema/contraste</button>
-                <button type="button" class="cashbot-question" data-question="O que é o alerta de gastos?">Alerta de gastos</button>
-                <button type="button" class="cashbot-question" data-question="Como usar o VLibras?">VLibras</button>
-            </div>
-
-            <div id="chatMessages" class="cashbot-messages">
-                <div class="cashbot-message cashbot-message-bot">
-                    <div class="cashbot-message-avatar">CF</div>
-                    <div class="cashbot-bubble">
-                        Posso ajudar com transações, filtros, relatórios, gráficos, saldo, tema, contraste, VLibras e alertas.
-                    </div>
-                </div>
-            </div>
+            <div id="chatMessages" class="cashbot-messages" role="log" aria-live="polite" aria-label="Conversa com o CashBot"></div>
         </div>
 
+        <div id="cashbotChips" class="cashbot-chips" role="group" aria-label="Sugestões de perguntas"></div>
+
         <form id="chatbotForm" class="cashbot-input-area">
-            <input id="chatInput" type="text" placeholder="Digite sua dúvida..." autocomplete="off">
+            <label for="chatInput" class="cashbot-sr">Pergunte ao CashBot</label>
+            <input id="chatInput" type="text" placeholder="Pergunte: quanto gastei este mês?" autocomplete="off" enterkeyhint="send" maxlength="200">
             <button id="sendChat" type="submit" aria-label="Enviar mensagem">➤</button>
         </form>
     </aside>

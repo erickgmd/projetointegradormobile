@@ -274,6 +274,39 @@
     }
   }
 
+  // Sugestão para erros de digitação comuns no domínio (gmial.com → gmail.com).
+  const DOMINIOS = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "yahoo.com.br",
+    "icloud.com", "live.com", "bol.com.br", "uol.com.br", "terra.com.br", "hotmail.com.br",
+    "outlook.com.br", "msn.com", "proton.me", "globo.com", "ig.com.br"];
+  // Domínios reais parecidos com os de cima: nunca sugerir troca.
+  const OUTROS_VALIDOS = ["me.com", "mac.com", "aol.com", "gmx.com", "zoho.com", "ymail.com",
+    "live.com.br", "mail.com", "email.com", "usp.br", "unb.br", "gov.br"];
+  function distancia(a, b) {
+    const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+    for (let j = 1; j <= b.length; j++) d[0][j] = j;
+    for (let i = 1; i <= a.length; i++)
+      for (let j = 1; j <= b.length; j++)
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1,
+          d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+          i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1] ? d[i - 2][j - 2] + 1 : Infinity);
+    return d[a.length][b.length];
+  }
+  function suggestEmail(value) {
+    const m = String(value || "").trim().toLowerCase().match(/^([^@\s]+)@([^@\s]+)$/);
+    if (!m) return "";
+    const [, user, domain] = m;
+    if (DOMINIOS.includes(domain) || OUTROS_VALIDOS.includes(domain)) return "";
+    let best = "", score = 3;
+    for (const d of DOMINIOS) {
+      const n = distancia(domain, d);
+      if (n < score) { score = n; best = d; }
+    }
+    if (best) return `${user}@${best}`;
+    // Final do domínio digitado errado: .con, .cmo, .com.b
+    const fixed = domain.replace(/\.(con|cmo|ocm|vom|xom|comm)$/, ".com").replace(/\.com\.b$/, ".com.br");
+    return fixed !== domain ? `${user}@${fixed}` : "";
+  }
+
   async function sendGoogleCredential(credential, extra = {}) {
     const response = await fetch("/api/login/google", {
       method: "POST",
@@ -290,6 +323,7 @@
     checkPassword,
     attachStrengthMeter,
     attachPasswordToggle,
+    suggestEmail,
     openPolicy,
     interceptPolicyLinks,
     mountGoogleButton,

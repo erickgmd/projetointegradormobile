@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#183350">
+<title>Confirmar email — CashFlow</title>
+<link rel="stylesheet" href="/accessibility.css">
+<link rel="stylesheet" href="/auth.css">
+<script src="/mobile.js"></script>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+</head>
+<body class="auth-page">
+<div class="auth-shell">
+  <div class="auth-brand"><img class="auth-logo brand-logo" src="/logo-cashflow.png" alt="" aria-hidden="true"><span>CashFlow</span></div>
+  <main class="auth-card" aria-live="polite">
+    <section id="carregando">
+      <div class="auth-icon" aria-hidden="true">✉️</div>
+      <h1>Confirmando seu email…</h1>
+      <p class="auth-lead">Só um instante.</p>
+    </section>
+    <section id="ok" hidden>
+      <div class="auth-icon" aria-hidden="true">✅</div>
+      <h1>Email confirmado!</h1>
+      <p class="auth-lead"><span id="okEmail"></span> está confirmado. Agora você pode recuperar a senha por ele e receber os alertas de gastos.</p>
+      <a class="auth-submit" style="display:grid;place-items:center;text-decoration:none" href="/CashFlow_Tela_HomePage/home.html">Abrir o CashFlow</a>
+    </section>
+    <section id="erro" hidden>
+      <div class="auth-icon" aria-hidden="true">⚠️</div>
+      <h1>Não deu para confirmar</h1>
+      <p class="auth-lead" id="erroMsg">Este link não é válido.</p>
+      <p class="auth-lead">Entre no CashFlow e toque em <strong>Reenviar link</strong> no aviso do topo da tela inicial.</p>
+      <a class="auth-submit" style="display:grid;place-items:center;text-decoration:none" href="/CashFlow_Tela_HomePage/home.html">Abrir o CashFlow</a>
+    </section>
+  </main>
+</div>
+<script>
+(function () {
+  var token = new URLSearchParams(location.search).get("token");
+  function mostrar(id) {
+    ["carregando", "ok", "erro"].forEach(function (s) { document.getElementById(s).hidden = s !== id; });
+  }
+  function erro(msg) {
+    document.getElementById("erroMsg").textContent = msg;
+    mostrar("erro");
+  }
+  if (!token) return erro("O link está incompleto. Abra de novo o botão do email.");
+  // O token sai da barra de endereço depois de lido.
+  history.replaceState(null, "", location.pathname);
+  fetch("/api/email/confirmar", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: token })
+  })
+    .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+    .then(function (x) {
+      if (x.ok && x.d.status === "success") {
+        document.getElementById("okEmail").textContent = x.d.email || "Seu email";
+        mostrar("ok");
+      } else erro(x.d.message || "Este link não é válido.");
+    })
+    .catch(function () { erro("Sem conexão com o servidor. Tente abrir o link de novo."); });
+})();
+</script>
+</body>
+</html>
