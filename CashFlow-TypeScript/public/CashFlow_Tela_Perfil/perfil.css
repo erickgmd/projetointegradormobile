@@ -949,3 +949,16 @@ body.theme-dark select:focus { background: #020617 !important; color: #f8fafc !i
 body.theme-dark .email-status.ok { color: #4ade80; }
 body.theme-dark .email-status.pendente { color: #fbbf24; }
 body.theme-dark .email-status-btn { color: #93c5fd; }
+
+/* Busca de CEP e limite de valores (nov/2026). */
+.profile-form .cep-status { display: block; font-weight: 600; }
+.profile-form .money-hint { display: block; margin-top: 6px; font-size: 0.86rem; font-weight: 600; color: #b91c1c; }
+body.theme-dark .cep-status { color: #94a3b8; }
+body.theme-dark .cep-status.loading { color: #93c5fd; }
+body.theme-dark .cep-status.ok { color: #86efac; }
+body.theme-dark .cep-status.error { color: #fca5a5; }
+body.theme-dark .profile-form .money-hint { color: #fca5a5; }
+/* Setas dos seletores, calendário e caixas de seleção acompanham o tema. */
+body.theme-dark { color-scheme: dark; }
+body.theme-light { color-scheme: light; }
+body.theme-dark select option { background: #0f172a; color: #e5e7eb; }
