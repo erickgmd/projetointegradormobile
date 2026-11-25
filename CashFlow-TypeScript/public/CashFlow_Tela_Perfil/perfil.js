@@ -102,6 +102,8 @@ async function carregarPerfil() {
             set("renda", formatarReal(d.renda));
             set("despesas", formatarReal(d.despesas));
             set("gasto_maximo", formatarReal(d.gasto_maximo));
+            // O CEP salvo não dispara uma nova busca; só quando a pessoa digita outro.
+            buscaCep?.definirSalvo(d.cep);
         }
 
     } catch (error) {
@@ -112,27 +114,46 @@ async function carregarPerfil() {
 // ===============================
 // 🔹 MOEDA
 // ===============================
+// Formata sem passar por notação científica (money-mask.js).
 function formatarReal(valor) {
-    if (!valor) return "";
-    return "R$ " + Number(valor).toLocaleString("pt-BR", {
-        minimumFractionDigits: 2,
+    if (!valor || Number(valor) === 0) return "";
+    return window.CashFlowMoney ? window.CashFlowMoney.formatarNumero(String(valor)) : "R$ " + valor;
+}
+
+// Renda, despesas e gasto máximo: até R$ 10 bilhões (limite do banco de dados).
+const LIMITE_VALOR = 9999999999.99;
+const NOMES_VALOR = { renda: "A renda mensal", despesas: "A média de despesas", gastoMaximo: "O gasto máximo" };
+function maskMoney(el) {
+    if (!el) return;
+    window.CashFlowMoney?.aplicar(el, {
+        max: LIMITE_VALOR,
+        mensagemMax: `${NOMES_VALOR[el.id] || "O valor"} pode ser de no máximo R$ 10 bilhões.`,
     });
 }
 
-function maskMoney(el) {
-    if (!el) return;
-
-    el.addEventListener("input", () => {
-        let v = el.value.replace(/\D/g, "");
-
-        if (!v) {
-            el.value = "";
-            return;
-        }
-
-        v = (parseInt(v) / 100).toFixed(2);
-        v = v.replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        el.value = "R$ " + v;
+// Busca de endereço pelo CEP (cep.js).
+let buscaCep = null;
+function setupCep() {
+    const form = document.querySelector(".profile-form");
+    const statusEl = document.getElementById("cepStatus");
+    if (!form || !window.CashFlowCep) return;
+    buscaCep = window.CashFlowCep.ligar({
+        cep: form.elements.cep,
+        logradouro: form.elements.logradouro,
+        bairro: form.elements.bairro,
+        cidade: form.elements.cidade,
+        estado: form.elements.estado,
+        status(texto, tipo) {
+            if (!statusEl) return;
+            statusEl.textContent = texto;
+            statusEl.className = "cep-status" + (tipo ? " " + tipo : "");
+        },
+        depois() {
+            // Cursor no fim da rua para a pessoa completar com o número.
+            const rua = form.elements.logradouro;
+            rua?.focus();
+            try { rua?.setSelectionRange(rua.value.length, rua.value.length); } catch { /* ok */ }
+        },
     });
 }
 
@@ -184,6 +205,21 @@ function setupForm() {
         formData.set("renda", brToDecimal(formData.get("renda")));
         formData.set("despesas", brToDecimal(formData.get("despesas")));
         formData.set("gasto_maximo", brToDecimal(formData.get("gasto_maximo")));
+        for (const [campo, nome] of [["renda", "A renda mensal"], ["despesas", "A média de despesas"], ["gasto_maximo", "O gasto máximo"]]) {
+            if (Number(formData.get(campo)) > LIMITE_VALOR) {
+                mostrarStatus("error", `${nome} pode ser de no máximo R$ 10 bilhões.`);
+                form.elements[campo]?.focus();
+                return;
+            }
+        }
+        const cepDigitos = String(formData.get("cep") || "").replace(/\D/g, "");
+        if (cepDigitos && cepDigitos.length !== 8) {
+            mostrarStatus("error", "O CEP precisa ter 8 números (ou deixe em branco).");
+            form.elements.cep?.focus();
+            return;
+        }
+        const botao = form.querySelector("button[type=submit]");
+        if (botao) botao.disabled = true;
 
         try {
             const response = await fetch("/api/perfil", {
@@ -195,7 +231,9 @@ function setupForm() {
             const result = await response.json();
 
             if (result.status === "success") {
-                mostrarStatus("success", "✓ Dados atualizados!");
+                mostrarStatus("success", "✓ Dados salvos! Voltando para a tela inicial...");
+                // Depois de salvar, a pessoa volta para o Dashboard.
+                setTimeout(() => window.location.assign("../CashFlow_Tela_HomePage/home.html"), 1400);
                 await carregarPerfil();
                 const saved = JSON.parse(formData.get('preferencias'));
                 window.cashflowPreferences = saved;
@@ -207,11 +245,13 @@ function setupForm() {
                 if (userName) userName.textContent = novoNome;
             } else {
                 mostrarStatus("error", result.message || "Não foi possível salvar. Confira os campos.");
+                if (botao) botao.disabled = false;
             }
 
         } catch (err) {
             console.error(err);
             mostrarStatus("error", "Sem conexão com o servidor. Tente novamente.");
+            if (botao) botao.disabled = false;
         }
     });
 }
@@ -389,6 +429,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupForm();
     setupTelegram();
     destacarGastoMaximo();
+    setupCep();
 
     maskMoney(document.getElementById("renda"));
     maskMoney(document.getElementById("despesas"));
