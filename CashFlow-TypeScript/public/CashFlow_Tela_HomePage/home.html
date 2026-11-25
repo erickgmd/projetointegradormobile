@@ -31,12 +31,6 @@
                 </div>
 
                 <div class="header-right">
-                    <div class="header-status">
-                        <span class="status-dot"></span>
-                        <span>Sistema ativo</span>
-                    </div>
-
-
                     <div class="notification-menu">
                         <button class="notification-trigger" id="notificationBell" type="button" aria-label="Abrir notificações">
                             <span class="notification-icon">🔔</span>
@@ -478,7 +472,7 @@
 
                             <div class="form-group">
                                 <label for="reportMonth">Selecione o mês</label>
-                                <input type="month" id="reportMonth">
+                                <input type="month" id="reportMonth" data-month-picker data-min="2015-01" data-max="+12">
                             </div>
 
                             <button class="btn-primary btn-large" id="generatePdfBtn">Gerar PDF</button>
@@ -541,7 +535,7 @@
                         <div class="bcb-field bcb-period">
                             <label for="bcbPeriod">Mês de referência</label>
                             <div class="bcb-period-row">
-                                <input type="month" id="bcbPeriod">
+                                <input type="month" id="bcbPeriod" data-month-picker data-min="2012-01" data-max="current">
                                 <button type="button" id="bcbReload">Consultar</button>
                             </div>
                         </div>
@@ -570,6 +564,8 @@
     <script src="/vendor/jspdf.umd.min.js"></script>
     <script src="/vendor/chart.umd.min.js"></script>
     <script src="/calculators.js"></script>
+    <script src="/money-mask.js"></script>
+    <script src="/month-picker.js"></script>
     <script>
         // Gráficos sem animação no celular/app: menos travamento.
         if (window.Chart && window.matchMedia("(max-width: 768px)").matches) window.Chart.defaults.animation = false;
