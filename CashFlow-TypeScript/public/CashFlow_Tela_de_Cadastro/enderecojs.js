@@ -1,19 +1,25 @@
-// Cadastro, etapa 2: endereço opcional com busca automática do CEP (ViaCEP).
+// Cadastro, etapa 2: endereço opcional com busca automática do CEP (cep.js).
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.querySelector('form');
     const cepInput = document.getElementById('cep');
     const cepStatus = document.getElementById('cepStatus');
     const alerta = document.getElementById('enderecoAlerta');
-    let ultimoCep = '';
-    let controller = null;
-    // Campos preenchidos pela busca do CEP: limpos se o próximo CEP não existir.
-    let preenchidoPeloCep = false;
-    const camposCep = ['logradouro', 'bairro', 'cidade', 'estado'];
-    const limparPreenchidos = () => {
-        if (!preenchidoPeloCep) return;
-        for (const id of camposCep) document.getElementById(id).value = '';
-        preenchidoPeloCep = false;
-    };
+    const $ = (id) => document.getElementById(id);
+    const buscaCep = window.CashFlowCep?.ligar({
+        cep: cepInput,
+        logradouro: $('logradouro'),
+        bairro: $('bairro'),
+        cidade: $('cidade'),
+        estado: $('estado'),
+        status(texto, tipo) {
+            if (!cepStatus) return;
+            cepStatus.textContent = texto;
+            cepStatus.className = 'cep-status' + (tipo ? ' ' + tipo : '');
+        },
+        depois(end) {
+            (end.logradouro ? $('numero') : $('logradouro'))?.focus();
+        },
+    });
 
     // Só entra aqui quem já criou a conta na etapa 1; os dados salvos voltam preenchidos.
     fetch('/api/perfil', { credentials: 'include' })
@@ -31,57 +37,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 const el = form.elements[id] || document.getElementById(id);
                 if (el && d[id] && !el.value) el.value = d[id];
             }
-            if (d.cep) ultimoCep = String(d.cep).replace(/\D/g, '');
+            if (d.cep) buscaCep?.definirSalvo(d.cep);
         })
         .catch(() => {});
-
-    function status(texto, tipo) {
-        if (!cepStatus) return;
-        cepStatus.textContent = texto;
-        cepStatus.className = 'cep-status' + (tipo ? ' ' + tipo : '');
-    }
-
-    async function buscarCep(cep) {
-        if (cep === ultimoCep) return;
-        ultimoCep = cep;
-        if (controller) controller.abort();
-        controller = new AbortController();
-        status('Buscando endereço...', 'loading');
-        try {
-            const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, { signal: controller.signal });
-            if (!response.ok) throw new Error('CEP não encontrado');
-            const data = await response.json();
-            if (data.erro) throw new Error('CEP não encontrado');
-            document.getElementById('logradouro').value = data.logradouro || '';
-            document.getElementById('bairro').value = data.bairro || '';
-            document.getElementById('cidade').value = data.localidade || '';
-            document.getElementById('estado').value = data.uf || '';
-            preenchidoPeloCep = true;
-            status('Endereço encontrado. Confira e informe o número e o complemento.', 'ok');
-            if (!data.logradouro) document.getElementById('logradouro').focus();
-            else document.getElementById('numero').focus();
-        } catch (error) {
-            if (error.name === 'AbortError') return;
-            ultimoCep = '';
-            limparPreenchidos();
-            if (error instanceof TypeError)
-                status('Sem conexão para consultar o CEP agora. Preencha o endereço manualmente.', 'error');
-            else
-                status('Não encontramos esse CEP. Confira os números ou preencha o endereço manualmente.', 'error');
-        }
-    }
-
-    // Máscara 00000-000 e busca assim que os 8 números forem digitados.
-    cepInput.addEventListener('input', function (e) {
-        const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
-        e.target.value = digits.replace(/^(\d{5})(\d)/, '$1-$2');
-        if (digits.length === 8) buscarCep(digits);
-        else {
-            ultimoCep = '';
-            status('Digite o CEP: o endereço é preenchido automaticamente.');
-        }
-    });
-    if (cepInput.value) cepInput.dispatchEvent(new Event('input'));
 
     // Navegação entre passos
     document.querySelector('.btn-secondary').addEventListener('click', function () {
