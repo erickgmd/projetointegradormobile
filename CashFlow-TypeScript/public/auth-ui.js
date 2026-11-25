@@ -1,3 +1,19 @@
+// Tema das telas de entrada/cadastro: segue o tema escolhido no app
+// (salvo neste navegador) ou, sem escolha, o tema do sistema.
+(function aplicarTemaSalvo() {
+  try {
+    const salvo = JSON.parse(localStorage.getItem("cashflowThemeSettings") || "{}");
+    const tema = salvo.theme || { automatico: "system", claro: "light", escuro: "dark" }[salvo.tema] || "system";
+    const escuro = tema === "dark" || (tema === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.classList.add(escuro ? "theme-dark" : "theme-light");
+    const noBody = () => document.body?.classList.add(escuro ? "theme-dark" : "theme-light");
+    if (document.body) noBody();
+    else document.addEventListener("DOMContentLoaded", noBody);
+  } catch {
+    /* sem armazenamento: fica o tema claro */
+  }
+})();
+
 // Componentes compartilhados das telas de acesso (login, cadastro, recuperação):
 // botão Google (web e app Android), medidor de força da senha, mostrar/ocultar
 // senha e janela da política de privacidade sem sair da página.

@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="/auth.css">
 <link rel="stylesheet" href="/mobile.css">
 <script src="/mobile.js"></script>
+<script src="/money-mask.js"></script>
 <script src="/requirements.js" defer></script>
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -109,17 +110,9 @@
       })
       .catch(() => {});
 
-    function maskMoney(el) {
-      el.addEventListener("input", () => {
-        let v = el.value.replace(/\D/g, "");
-        if (!v) { el.value = ""; return; }
-        v = (parseInt(v, 10) / 100).toFixed(2);
-        v = v.replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        el.value = "R$ " + v;
-      });
-    }
-    maskMoney(rendaInput);
-    maskMoney(despesasInput);
+    // Máscara em reais com limite de R$ 10 bilhões (money-mask.js).
+    window.CashFlowMoney?.aplicar(rendaInput, { max: 9999999999.99, mensagemMax: "A renda mensal pode ser de no máximo R$ 10 bilhões." });
+    window.CashFlowMoney?.aplicar(despesasInput, { max: 9999999999.99, mensagemMax: "A média de despesas pode ser de no máximo R$ 10 bilhões." });
 
     function brToDecimal(str) {
       if (!str) return "";
