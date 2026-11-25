@@ -27,11 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
       '<button type="submit">Registrar</button></div><p id="quickStatus" class="quick-status" role="status"></p></form>' +
       '<details class="quick-category"><summary>+ Criar nova categoria</summary><form id="categoryCreate" class="quick-category-form">' +
       '<div class="quick-field"><label for="categoryName">Nome</label><input id="categoryName" required maxlength="80" placeholder="Ex.: Academia"></div>' +
-      '<div class="quick-field"><label for="categoryType">Tipo</label><select id="categoryType"><option value="expense">Despesa</option><option value="income">Receita</option></select></div>' +
+      '<div class="quick-field"><label for="categoryType">Tipo</label><select id="categoryType"><option value="">Escolha o tipo</option><option value="expense">Despesa</option><option value="income">Receita</option></select></div>' +
       '<button type="submit">Criar categoria</button><p id="categoryStatus" class="quick-status" role="status"></p></form></details>';
-    // Na página inicial vira um cartão próprio, antes do "Lançamento manual".
+    // Na página inicial vira um cartão próprio, logo depois da "Nova Transação":
+    // assim a pessoa registra primeiro receitas e saldo, e só depois usa o atalho.
     const formSection = transactionForm.closest(".section-block");
-    if (formSection) formSection.before(section);
+    if (formSection) formSection.after(section);
     else (quickHost || transactionForm.parentElement).prepend(section);
     let quickKey;
     document.getElementById("quickExpense").onsubmit = async (e) => {
@@ -59,19 +60,56 @@ document.addEventListener("DOMContentLoaded", () => {
         button.disabled = false;
       }
     };
+    // O tipo da categoria acompanha o tipo escolhido na Nova Transação.
+    const typeSelect = document.getElementById("type");
+    const categoryType = document.getElementById("categoryType");
+    const syncCategoryType = () => {
+      if (typeSelect?.value && !categoryType.dataset.tocado) categoryType.value = typeSelect.value;
+    };
+    typeSelect?.addEventListener("change", syncCategoryType);
+    categoryType.addEventListener("change", () => (categoryType.dataset.tocado = "1"));
+    document.querySelector(".quick-category")?.addEventListener("toggle", syncCategoryType);
+    // Depois de criar, a categoria já fica escolhida no formulário da Nova Transação.
+    const selecionarNaTransacao = (nome, tipo) => {
+      const fm = window.financeManager;
+      if (!typeSelect || !fm) return;
+      typeSelect.value = tipo;
+      fm.filterCategoriesByType(tipo);
+      const category = document.getElementById("category");
+      const option = [...category.options].find((o) => o.value.toLowerCase() === nome.toLowerCase());
+      if (option) category.value = option.value;
+    };
     document.getElementById("categoryCreate").onsubmit = async (e) => {
       e.preventDefault();
       const status = document.getElementById("categoryStatus");
+      const button = e.target.querySelector("button[type=submit]");
+      const nome = document.getElementById("categoryName").value.trim().replace(/\s+/g, " ");
+      const tipo = categoryType.value;
+      const rotulo = tipo === "income" ? "Receita" : "Despesa";
+      const mostrar = (tipoMsg, texto) => {
+        status.dataset.type = tipoMsg;
+        status.textContent = texto;
+        status.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
+      };
+      if (!nome) return mostrar("error", "Dê um nome para a categoria.");
+      if (!tipo) return mostrar("error", "Escolha se a categoria é de Receita ou de Despesa.");
+      button.disabled = true;
       try {
-        await cashflowRequest("/api/categorias", {
-          nome: document.getElementById("categoryName").value,
-          tipo: document.getElementById("categoryType").value,
-        });
+        await cashflowRequest("/api/categorias", { nome, tipo });
         await window.financeManager.loadCategories();
+        selecionarNaTransacao(nome, tipo);
         e.target.reset();
-        status.textContent = "Categoria criada.";
+        delete categoryType.dataset.tocado;
+        mostrar("ok", `✓ Categoria "${nome}" criada em ${rotulo}. Ela já está selecionada na Nova Transação.`);
+        window.financeManager?.showSuccessMessage?.(`Categoria "${nome}" criada em ${rotulo}.`);
       } catch (error) {
-        status.textContent = error.message;
+        if (/já existe/i.test(error.message)) {
+          await window.financeManager.loadCategories();
+          selecionarNaTransacao(nome, tipo);
+          mostrar("ok", `A categoria "${nome}" já existe em ${rotulo}. Selecionamos ela na Nova Transação.`);
+        } else mostrar("error", error.message);
+      } finally {
+        button.disabled = false;
       }
     };
   }
