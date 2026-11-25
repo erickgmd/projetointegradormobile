@@ -3408,3 +3408,38 @@ body.theme-dark .quick-category .category-delete {
     color: #fecaca !important;
 }
 body.theme-dark .quick-category .category-delete:hover { background: rgba(220, 38, 38, 0.26) !important; }
+
+/* ---------- Valores grandes sempre cabem (fit-text.js) ----------
+   O texto fica numa linha e a fonte diminui até caber; se nem assim
+   couber, quebra de linha (classe .fit-quebra) em vez de vazar. */
+.summary > * { min-width: 0; }
+.summary .card p { white-space: nowrap; overflow: hidden; max-width: 100%; }
+.result-item { gap: 12px; }
+.result-item span:first-child { flex: 0 1 auto; min-width: 35%; }
+.result-item span:last-child { flex: 0 1 auto; min-width: 0; margin-left: auto; white-space: nowrap; overflow: hidden; text-align: right; }
+.cashbot-itens li > * { min-width: 0; }
+.cashbot-item-v { overflow: hidden; }
+.tx-side { min-width: 0; }
+.summary .card p.fit-quebra,
+.transaction-amount.fit-quebra,
+.result-item span.fit-quebra,
+.cashbot-item-v.fit-quebra { white-space: normal !important; overflow-wrap: anywhere; overflow: visible; }
+@media (max-width: 768px) {
+    .tx-side { gap: 10px; }
+    .transaction-amount { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; }
+    .tx-actions { flex: none; }
+}
+.summary.resumo-empilhado { grid-template-columns: 1fr !important; }
+.summary.resumo-empilhado > * { grid-column: auto !important; }
+.valor-abaixo { flex-wrap: wrap !important; }
+.valor-abaixo > .valor-linha { flex: 1 1 100% !important; margin-left: 0 !important; }
+.tx-side.valor-abaixo > .tx-actions { margin-left: auto; }
+/* Balão do CashBot nunca passa da largura do painel. */
+#chatbotPanel .cashbot-message { min-width: 0; max-width: 100%; }
+#chatbotPanel .cashbot-bubble { min-width: 0; overflow-wrap: anywhere; }
+/* Cartões das Ferramentas não alargam a página com resultados enormes. */
+.tool-card, .result-box, .tools-grid > * { min-width: 0; max-width: 100%; }
+.tool-card input, .tool-card select { min-width: 0; max-width: 100%; }
+#chatbotPanel .cashbot-input-area { min-width: 0; }
+#chatbotPanel .cashbot-input-area input { min-width: 0; flex: 1 1 auto; }
+#chatbotPanel .cashbot-input-area button { flex: none; }
