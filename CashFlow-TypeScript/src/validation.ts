@@ -21,15 +21,26 @@ export function date(value: unknown, name: string) {
     throw new HttpError(400, `Data ${name} inválida.`);
   return s;
 }
+// Nomes amigáveis para as mensagens de erro de valores.
+const moneyLabels: Record<string, string> = {
+  renda: "da renda mensal",
+  despesas: "da média de despesas",
+  gasto_maximo: "do gasto máximo",
+  valor: "",
+};
 export function money(value: unknown, name: string) {
+  const label = (moneyLabels[name] ?? name) ? ` ${moneyLabels[name] ?? name}` : "";
   let s = String(value ?? "").replace(/R\$|\s/g, "");
   if (s.includes(",")) {
     if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(s))
-      throw new HttpError(400, `Valor ${name} inválido.`);
+      throw new HttpError(400, `Valor${label} inválido.`);
     s = s.replace(/\./g, "").replace(",", ".");
   }
-  if (!/^\d+(?:\.\d{1,2})?$/.test(s) || Number(s) > 9999999999.99)
-    throw new HttpError(400, `Valor ${name} inválido.`);
+  if (!/^\d+(?:\.\d{1,2})?$/.test(s))
+    throw new HttpError(400, `Valor${label} inválido.`);
+  // Limite das colunas NUMERIC(12,2): até R$ 9.999.999.999,99 (R$ 10 bilhões).
+  if (Number(s) > 9999999999.99)
+    throw new HttpError(400, `O valor${label} pode ser de no máximo R$ 10 bilhões.`);
   return Number(s).toFixed(2);
 }
 export function email(value: unknown) {
