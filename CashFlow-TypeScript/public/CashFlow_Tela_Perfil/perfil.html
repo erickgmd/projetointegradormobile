@@ -79,7 +79,8 @@
         <fieldset>
             <legend>Endereço</legend>
             <label>CEP (opcional):
-                <input type="text" name="cep" placeholder="00000-000" maxlength="9" inputmode="numeric">
+                <input type="text" name="cep" id="perfilCep" placeholder="00000-000" maxlength="9" inputmode="numeric" autocomplete="postal-code" aria-describedby="cepStatus">
+                <small class="cep-status" id="cepStatus" aria-live="polite">Digite o CEP: o endereço é preenchido automaticamente.</small>
             </label>
             <label>Logradouro (opcional):
                 <input type="text" name="logradouro" placeholder="Rua, avenida ou quadra, com o número">
@@ -188,6 +189,8 @@
         <button type="submit">Salvar Informações</button>
     </form>
 </div>
+<script src="/money-mask.js"></script>
+<script src="/cep.js"></script>
 <script src="perfil.js"></script>
 <!-- MODAL TELEGRAM -->
 <div id="modalCodigo" class="modal" aria-labelledby="tgTitle">
