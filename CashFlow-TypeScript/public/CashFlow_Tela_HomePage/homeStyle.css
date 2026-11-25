@@ -100,28 +100,6 @@ body {
     gap: 16px;
 }
 
-.header-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    backdrop-filter: blur(14px);
-    font-size: 0.92rem;
-    color: white;
-    white-space: nowrap;
-}
-
-.status-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
-}
-
 /* USER MENU */
 .user-menu {
     position: relative;
@@ -1344,7 +1322,6 @@ body.theme-light .hero-text p {
     color: #334155;
 }
 
-body.theme-light .header-status,
 body.theme-light .hero-panel,
 body.theme-light .nav-btn,
 body.theme-light .hero-action-btn {
@@ -2660,7 +2637,6 @@ body.theme-dark .quick-expense-card input, body.theme-dark .quick-expense-card s
     .brand-content h1 { font-size: 1.3rem !important; line-height: 1.1; }
     .brand-content p { display: none !important; }
     .header-right { gap: 8px !important; margin-left: auto; flex-wrap: nowrap !important; width: auto !important; }
-    .header-status { display: none !important; }
     .notification-trigger, .user-trigger { width: 42px !important; height: 42px !important; }
 
     /* Boas-vindas curta: os atalhos já estão na barra inferior */
@@ -3269,4 +3245,123 @@ body.theme-dark #cashbotChips.cashbot-chips { border-top-color: rgba(148, 163, 1
         width: auto !important;
         height: calc(100dvh - 170px - env(safe-area-inset-bottom)) !important;
     }
+}
+
+/* ===== Ajustes de usabilidade (nov/2026, parte 3) ===== */
+
+/* ---------- Controles nativos acompanham o tema ----------
+   Setas de <select>, ícone do calendário e setinhas dos campos numéricos
+   ficavam escuros (quase invisíveis) no tema escuro. */
+body.theme-dark { color-scheme: dark; }
+body.theme-light { color-scheme: light; }
+body.theme-dark select,
+body.theme-dark input { color-scheme: dark; }
+body.theme-dark select option,
+body.theme-dark select optgroup { background: #0f172a; color: #e5e7eb; }
+
+/* ---------- Ícones de notificações e usuário no topo ----------
+   Sem fundo nem borda de botão padrão (o "quadrado branco"): só o círculo. */
+.notification-trigger,
+.user-trigger {
+    -webkit-appearance: none;
+    appearance: none;
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    line-height: 0;
+    color: inherit;
+}
+.notification-trigger:focus-visible,
+.user-trigger:focus-visible { outline: 3px solid #60a5fa !important; outline-offset: 3px !important; }
+.notification-trigger:focus:not(:focus-visible),
+.user-trigger:focus:not(:focus-visible) { outline: none !important; }
+body.theme-dark .notification-icon,
+body.theme-dark .user-avatar {
+    background: rgba(148, 163, 184, 0.16) !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+}
+.high-contrast .notification-trigger,
+.high-contrast .user-trigger { background: none !important; border: 0 !important; }
+.high-contrast .notification-icon,
+.high-contrast .user-avatar { background: #000 !important; border: 2px solid #fff !important; }
+
+/* ---------- Seletor de mês e ano (Relatórios e Taxas BCB) ---------- */
+.month-picker {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1.4fr) minmax(0, 1fr) 44px;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    max-width: 460px;
+}
+.month-picker select {
+    width: 100%;
+    min-width: 0;
+    height: 46px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 1.5px solid #cbd5e1;
+    background: #ffffff;
+    color: #0f172a;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.month-picker select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18); }
+.month-picker .mp-arrow {
+    width: 44px !important;
+    height: 46px;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    border: 1.5px solid #cbd5e1 !important;
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-size: 1.5rem !important;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: none !important;
+    transform: none !important;
+}
+.month-picker .mp-arrow:hover:not(:disabled) { background: #e2e8f0 !important; }
+.month-picker .mp-arrow:disabled { opacity: 0.35; cursor: not-allowed; }
+body.theme-dark .month-picker select {
+    background: #020617;
+    color: #f8fafc;
+    border-color: rgba(148, 163, 184, 0.4);
+}
+body.theme-dark .month-picker .mp-arrow {
+    background: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: rgba(148, 163, 184, 0.45) !important;
+}
+body.theme-dark .month-picker .mp-arrow:hover:not(:disabled) { background: #334155 !important; }
+.bcb-period-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bcb-period-row .month-picker { flex: 1 1 300px; }
+.report-card .month-picker { margin-top: 4px; }
+
+/* ---------- Avisos dos campos (valor negativo, limite de valor) ---------- */
+.field-hint, .money-hint {
+    display: block;
+    margin: 6px 0 0;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    font-weight: 600;
+}
+.field-hint-warn { color: #b45309; }
+.money-hint { color: #b91c1c; }
+body.theme-dark .field-hint-warn { color: #fbbf24; }
+body.theme-dark .money-hint { color: #fca5a5; }
+
+/* Mensagens da criação de categoria legíveis no tema escuro. */
+body.theme-dark .quick-status[data-type="ok"] { color: #86efac; }
+body.theme-dark .quick-status[data-type="error"] { color: #fca5a5; }
+.quick-category-form .quick-status { font-weight: 600; }
+
+@media (max-width: 768px) {
+    .month-picker { max-width: none; grid-template-columns: 44px minmax(0, 1.3fr) minmax(0, 1fr) 44px; }
+    /* O formulário de categoria empilha no celular e o botão fica acima do 💬. */
+    .quick-category-form { grid-template-columns: 1fr !important; }
 }
