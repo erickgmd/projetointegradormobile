@@ -131,6 +131,31 @@ test("RF007 RF010 RNF018 transação idempotente, edição e categoria própria"
     80.5,
   );
 });
+test("RF010 excluir categoria própria move as transações para Outros", async (t) => {
+  const { call, reg } = await setup(t);
+  const c = await reg();
+  const outra = await reg("outra@example.test");
+  const cat = await call("/api/categorias", { nome: "Bico", tipo: "income" }, c);
+  assert.equal(cat.statusCode, 200, cat.body);
+  const tx = await call(
+    "/api/transacoes",
+    { description: "Freela", amount: "300", category: "Bico", type: "income", date: "2026-11-04" },
+    c,
+  );
+  assert.equal(tx.statusCode, 200, tx.body);
+  const lista = (await call("/api/categorias", undefined, c)).json().categories;
+  assert.equal(lista[0].uso, 1);
+  // Outra pessoa não consegue excluir a categoria.
+  assert.equal((await call("/api/categorias/excluir", { id: cat.json().id }, outra)).statusCode, 404);
+  const del = await call("/api/categorias/excluir", { id: cat.json().id }, c);
+  assert.equal(del.statusCode, 200, del.body);
+  assert.equal(del.json().movidas, 1);
+  assert.equal((await call("/api/categorias", undefined, c)).json().categories.length, 0);
+  const txs = (await call("/api/transacoes", undefined, c)).json().transactions;
+  assert.equal(txs[0].category, "outros-receitas");
+  assert.equal((await call("/api/categorias/excluir", { id: cat.json().id }, c)).statusCode, 404);
+  assert.equal((await call("/api/categorias/excluir", { id: "abc" }, c)).statusCode, 400);
+});
 test("RF011 RF014-016 RNF024 saldo exato e alertas de 80/100 por mês", async (t) => {
   const { call, reg, pg } = await setup(t);
   const c = await reg();
