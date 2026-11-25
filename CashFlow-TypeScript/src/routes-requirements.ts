@@ -124,11 +124,45 @@ export async function requirementsRoutes(
     status: "success",
     categories: (
       await userDatabase(db, req.userId!).query(
-        "SELECT id,nome,tipo FROM categorias WHERE usuario_id=$1 ORDER BY nome",
+        // "uso": quantas transações usam a categoria (mostrado antes de excluir).
+        `SELECT c.id,c.nome,c.tipo,
+           (SELECT count(*)::int FROM transacoes t
+             WHERE t.usuario_id=c.usuario_id AND lower(t.categoria)=lower(c.nome) AND t.tipo=c.tipo) AS uso
+         FROM categorias c WHERE c.usuario_id=$1 ORDER BY c.nome`,
         [req.userId],
       )
     ).rows,
   }));
+  // Exclui uma categoria criada pela pessoa. As transações que usavam a categoria
+  // passam para "Outros" do mesmo tipo, para nenhum lançamento ficar sem categoria.
+  app.post("/api/categorias/excluir", async (req) => {
+    const categoriaId = Number(requestBody(req).id);
+    if (!Number.isSafeInteger(categoriaId) || categoriaId <= 0)
+      throw new HttpError(400, "Categoria inválida.");
+    return userDatabase(db, req.userId!).transaction(async (tx) => {
+      const r = await tx.query(
+        "DELETE FROM categorias WHERE id=$1 AND usuario_id=$2 RETURNING nome,tipo",
+        [categoriaId, req.userId],
+      );
+      if (!r.rows.length) throw new HttpError(404, "Categoria não encontrada.");
+      const { nome, tipo } = r.rows[0];
+      const destino = tipo === "income" ? "outros-receitas" : "outros-despesas";
+      const movidas = await tx.query(
+        "UPDATE transacoes SET categoria=$1 WHERE usuario_id=$2 AND lower(categoria)=lower($3) AND tipo=$4",
+        [destino, req.userId, nome, tipo],
+      );
+      return {
+        status: "success",
+        nome,
+        tipo,
+        movidas: movidas.rowCount ?? 0,
+        message:
+          movidas.rowCount
+            ? `Categoria "${nome}" excluída. ${movidas.rowCount === 1 ? "1 transação foi" : `${movidas.rowCount} transações foram`} para "Outros".`
+            : `Categoria "${nome}" excluída.`,
+      };
+    });
+  });
   app.post("/api/categorias", async (req) => {
     const b = requestBody(req),
       nome = text(b.nome, "nome da categoria", 100);
