@@ -122,14 +122,24 @@ class FinanceManager {
             const select = document.getElementById('category');
             // Categorias próprias entram no grupo do tipo delas (Receitas/Despesas).
             const groups = select ? [...select.querySelectorAll('optgroup')] : [];
+            // Categorias excluídas saem da lista.
+            const nomes = new Set(this.customCategories.map(c => c.nome));
+            [...select.options].forEach(o => {
+                if (o.dataset.custom && !nomes.has(o.value)) {
+                    if (select.value === o.value) select.value = '';
+                    o.remove();
+                }
+            });
             this.customCategories.forEach(c => {
                 if (![...select.options].some(o => o.value === c.nome)) {
                     const option = new Option(c.nome, c.nome);
+                    option.dataset.custom = '1';
                     const group = groups.find(g => g.label === (c.tipo === 'income' ? 'Receitas' : 'Despesas'));
                     (group || select).appendChild(option);
                 }
             });
             this.filterCategoriesByType(document.getElementById('type')?.value || '');
+            window.dispatchEvent(new Event('cashflow:categorias'));
         } catch (error) { console.warn('Categorias indisponíveis', error); }
     }
 
