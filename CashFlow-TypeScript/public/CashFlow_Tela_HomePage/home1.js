@@ -81,7 +81,13 @@ class FinanceManager {
 
         document.getElementById('type')?.addEventListener('change', (e) => {
             this.filterCategoriesByType(e.target.value);
+            this.avisoValorNegativo();
         });
+
+        // Valor negativo: avisa que o sinal de menos não é necessário.
+        const amountInput = document.getElementById('amount');
+        amountInput?.addEventListener('input', () => this.avisoValorNegativo());
+        amountInput?.addEventListener('change', () => this.corrigirValorNegativo());
 
         document.getElementById('generatePdfBtn')?.addEventListener('click', () => {
             this.generatePdfReport();
@@ -160,9 +166,54 @@ class FinanceManager {
         document.getElementById('description').focus();
     }
 
+    // O valor é sempre positivo: o tipo (Receita/Despesa) é que define se entra ou sai.
+    avisoValorNegativo() {
+        const input = document.getElementById('amount');
+        if (!input) return;
+        let hint = document.getElementById('amountHint');
+        const negativo = /^\s*-/.test(input.value) || Number(input.value) < 0;
+        if (!negativo) { hint?.remove(); input.removeAttribute('aria-describedby'); return; }
+        if (!hint) {
+            hint = document.createElement('p');
+            hint.id = 'amountHint';
+            hint.className = 'field-hint field-hint-warn';
+            hint.setAttribute('role', 'status');
+            input.after(hint);
+            input.setAttribute('aria-describedby', 'amountHint');
+        }
+        const tipo = document.getElementById('type')?.value;
+        hint.textContent = tipo === 'income'
+            ? 'Receitas não usam sinal de menos. Digite só o valor; se for um gasto, escolha o tipo Despesa.'
+            : 'Não precisa do sinal de menos: escolha o tipo Despesa e digite só o valor (ex.: 500). Vamos registrar como despesa.';
+    }
+
+    // Ao sair do campo, -500 vira 500 e, se o tipo ainda não foi escolhido, vira Despesa.
+    corrigirValorNegativo() {
+        const input = document.getElementById('amount');
+        const valor = Number(input?.value);
+        if (!input || !(valor < 0)) return;
+        input.value = String(Math.abs(valor));
+        const type = document.getElementById('type');
+        if (type && !type.value) {
+            type.value = 'expense';
+            this.filterCategoriesByType('expense');
+        }
+        this.avisoValorNegativo();
+        const hint = document.getElementById('amountHint') || document.createElement('p');
+        if (!hint.id) {
+            hint.id = 'amountHint';
+            hint.className = 'field-hint field-hint-warn';
+            hint.setAttribute('role', 'status');
+            input.after(hint);
+        }
+        hint.textContent = type?.value === 'income'
+            ? 'Tiramos o sinal de menos. Confira o tipo: está marcado como Receita.'
+            : 'Tiramos o sinal de menos: o valor será registrado como despesa.';
+    }
+
     async addTransaction() {
         const description = document.getElementById('description').value.trim();
-        const amount = document.getElementById('amount').value.trim();
+        let amount = document.getElementById('amount').value.trim();
         const category = document.getElementById('category').value;
         const type = document.getElementById('type').value;
         const date = document.getElementById('date').value;
@@ -170,6 +221,15 @@ class FinanceManager {
         if (!description || !amount || !category || !type || !date) {
             this.showErrorMessage('Preencha descrição, valor, data, tipo e categoria.');
             return;
+        }
+        if (Number(amount) < 0) {
+            if (type === 'income') {
+                this.showErrorMessage('Receitas não usam sinal de menos. Digite só o valor ou mude o tipo para Despesa.');
+                return;
+            }
+            // Despesa com "-500": registra 500 (o sinal não é somado duas vezes).
+            amount = String(Math.abs(Number(amount)));
+            document.getElementById('amount').value = amount;
         }
         if (!(Number(amount) > 0)) {
             this.showErrorMessage('Informe um valor maior que zero.');
@@ -227,6 +287,7 @@ class FinanceManager {
         this.editingId = null;
         document.getElementById('cancelEdit')?.remove();
         document.getElementById('transactionForm')?.reset();
+        document.getElementById('amountHint')?.remove();
         this.setTodayDate();
         this.filterCategoriesByType('');
     }
@@ -1376,10 +1437,16 @@ class FinanceManager {
         el.hidden = !message;
     }
 
+    // Campos de dinheiro das ferramentas usam máscara (R$ 1.234,56); aqui vira Number.
+    lerValor(id) {
+        const el = document.getElementById(id);
+        return window.CashFlowMoney ? window.CashFlowMoney.valor(el) : parseFloat(el?.value);
+    }
+
     calculateSalary() {
-        const grossSalary = parseFloat(document.getElementById('grossSalary').value);
+        const grossSalary = this.lerValor('grossSalary');
         const dependents = parseInt(document.getElementById('dependents').value) || 0;
-        const healthPlan = parseFloat(document.getElementById('healthPlan').value) || 0;
+        const healthPlan = this.lerValor('healthPlan') || 0;
 
         if (!grossSalary || grossSalary <= 0) {
             this.toolError('salaryResult', 'Informe um salário bruto maior que zero.');
@@ -1401,8 +1468,8 @@ class FinanceManager {
     }
 
     calculateCompoundInterest() {
-        const initialAmount = parseFloat(document.getElementById('initialAmount').value) || 0;
-        const monthlyContribution = parseFloat(document.getElementById('monthlyContribution').value) || 0;
+        const initialAmount = this.lerValor('initialAmount') || 0;
+        const monthlyContribution = this.lerValor('monthlyContribution') || 0;
         const interestRate = parseFloat(document.getElementById('interestRate').value) || 0;
         const timePeriod = parseInt(document.getElementById('timePeriod').value) || 0;
 
@@ -1431,7 +1498,7 @@ class FinanceManager {
     }
 
     calculateLoan() {
-        const loanAmount = parseFloat(document.getElementById('loanAmount').value) || 0;
+        const loanAmount = this.lerValor('loanAmount') || 0;
         const loanRate = parseFloat(document.getElementById('loanRate').value) || 0;
         const loanPeriod = parseInt(document.getElementById('loanPeriod').value) || 0;
 
@@ -1454,7 +1521,7 @@ class FinanceManager {
     }
 
     convertCurrency() {
-        const amount = parseFloat(document.getElementById('amountToConvert').value) || 0;
+        const amount = this.lerValor('amountToConvert') || 0;
         const fromCurrency = document.getElementById('fromCurrency').value;
         const toCurrency = document.getElementById('toCurrency').value;
         const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 0;
@@ -1579,13 +1646,15 @@ class FinanceManager {
         if (lista) lista.style.display = "block";
     }
 
+    // Os filtros (mês de referência) continuam visíveis: dá para trocar o mês
+    // enquanto carrega ou depois de um erro.
     esconderAreaJuros() {
         const cards = document.getElementById("bcbCards");
         const filters = document.getElementById("bcbFilters");
         const lista = document.getElementById("bcbLista");
 
         if (cards) cards.style.display = "none";
-        if (filters) filters.style.display = "none";
+        if (filters) filters.style.display = "grid";
         if (lista) lista.style.display = "none";
     }
 
@@ -1695,17 +1764,24 @@ class FinanceManager {
     }
 
     async carregarDadosJuros() {
-        this.atualizarStatusJuros("bcb-loading", `<span class="bcb-spinner"></span> Carregando taxas do Banco Central...`);
+        const pedido = document.getElementById("bcbPeriod")?.value || "";
+        this.bcbPedido = pedido;
+        const nomePedido = /^\d{4}-\d{2}$/.test(pedido)
+            ? new Date(Number(pedido.slice(0, 4)), Number(pedido.slice(5, 7)) - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+            : "";
+        this.atualizarStatusJuros("bcb-loading", `<span class="bcb-spinner"></span> Carregando taxas do Banco Central${nomePedido ? " de " + nomePedido : ""}...`);
         this.esconderAreaJuros();
 
         try {
-            const response = await fetch(this.apiJuros+"?mes="+encodeURIComponent(document.getElementById("bcbPeriod")?.value||""), {
+            const response = await fetch(this.apiJuros + "?mes=" + encodeURIComponent(pedido), {
                 method: "GET",
                 credentials: "include",
                 cache: "no-store"
             });
 
             const json = await response.json().catch(() => ({}));
+            // Se a pessoa trocou de mês no meio do caminho, só vale a última consulta.
+            if (this.bcbPedido !== pedido) return;
 
             if (!response.ok) {
                 throw new Error(json.message || `Erro HTTP ${response.status}`);
@@ -1735,6 +1811,7 @@ class FinanceManager {
             this.bcbJaCarregado = true;
 
         } catch (erro) {
+            if (this.bcbPedido !== pedido) return;
             console.error("Erro ao carregar juros:", erro);
             this.atualizarStatusJuros(
                 "bcb-error",
@@ -2551,6 +2628,36 @@ setInterval(async()=>{if(document.visibilityState!=="visible"||!window.financeMa
             clearTimeout(timer);
             timer = setTimeout(() => fab.classList.remove('fab-escondido'), 900);
         }, { passive: true });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montar);
+    else montar();
+})();
+
+
+// Máscara de dinheiro nas Ferramentas e consulta automática das taxas do BCB
+// ao trocar o mês de referência.
+(function initMascarasEPeriodos() {
+    function montar() {
+        const money = window.CashFlowMoney;
+        if (money) {
+            ['grossSalary', 'healthPlan', 'initialAmount', 'monthlyContribution', 'loanAmount']
+                .forEach((id) => money.aplicar(document.getElementById(id)));
+            const simbolos = { BRL: 'R$ ', USD: 'US$ ', EUR: '€ ', GBP: '£ ' };
+            const origem = document.getElementById('fromCurrency');
+            const valor = document.getElementById('amountToConvert');
+            money.aplicar(valor, { prefixo: () => simbolos[origem?.value] || '' });
+            origem?.addEventListener('change', () => valor?.cashflowMoney?.atualizar());
+        }
+        let espera;
+        document.getElementById('bcbPeriod')?.addEventListener('change', () => {
+            clearTimeout(espera);
+            espera = setTimeout(() => {
+                const fm = window.financeManager;
+                if (!fm) return;
+                fm.bcbJaCarregado = false;
+                fm.carregarDadosJuros();
+            }, 250);
+        });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montar);
     else montar();
